@@ -1,0 +1,430 @@
+/**
+ * 報價單查看組件
+ * Created: 2024-12-28
+ */
+
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  ArrowLeftIcon,
+  PencilIcon,
+  DocumentArrowDownIcon,
+  PrinterIcon,
+  ShareIcon
+} from '@heroicons/react/24/outline';
+import { useQuoteStore } from '../../stores/useQuoteStore';
+import type { Quote } from '../../types';
+
+/**
+ * 報價單查看組件
+ * 提供報價單的詳細查看、列印和匯出功能
+ */
+export function QuoteView(): JSX.Element {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { 
+    quotes, 
+    currentQuote, 
+    loading,
+    error,
+    fetchQuotes,
+    fetchQuoteItems,
+    setCurrentQuote,
+    clearCurrentQuote
+  } = useQuoteStore();
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  /**
+   * 載入報價單資料
+   */
+  useEffect(() => {
+    const loadQuote = async () => {
+      if (id) {
+        // 先從 store 中尋找報價單
+        let foundQuote = quotes.find(q => q.id === id);
+        
+        if (!foundQuote) {
+          // 如果 store 中沒有，從 API 載入
+          await fetchQuotes();
+          foundQuote = quotes.find(q => q.id === id);
+        }
+        
+        if (foundQuote) {
+          // 載入報價單項目
+          await fetchQuoteItems(id);
+          setQuote(foundQuote);
+          setCurrentQuote(foundQuote);
+        }
+      }
+    };
+    
+    loadQuote();
+    
+    // 清理函數
+    return () => {
+      clearCurrentQuote();
+    };
+  }, [id, quotes, fetchQuotes, fetchQuoteItems, setCurrentQuote, clearCurrentQuote]);
+
+  /**
+   * 處理列印
+   */
+  const handlePrint = (): void => {
+    window.print();
+  };
+
+  /**
+   * 處理PDF匯出
+   */
+  const handleExportPDF = async (): Promise<void> => {
+    if (!quote) return;
+    
+    try {
+      const { exportQuoteToPDF } = await import('../../utils/pdfExport');
+      await exportQuoteToPDF('quote-preview', quote);
+      alert('PDF匯出成功！');
+    } catch (error) {
+      console.error('PDF匯出失敗:', error);
+      alert('PDF匯出失敗，請稍後再試');
+    }
+  };
+
+  /**
+   * 處理分享
+   */
+  const handleShare = async (): Promise<void> => {
+    if (!quote) return;
+    
+    try {
+      const { previewQuotePDF } = await import('../../utils/pdfExport');
+      await previewQuotePDF('quote-preview', quote);
+    } catch (error) {
+      console.error('PDF預覽失敗:', error);
+      alert('PDF預覽失敗，請稍後再試');
+    }
+  };
+
+  /**
+   * 取得狀態顯示樣式
+   */
+  const getStatusBadge = (status: Quote['status']): string => {
+    const baseClasses = 'inline-flex items-center px-3 py-1 rounded-full text-sm font-medium';
+    
+    switch (status) {
+      case 'draft':
+        return `${baseClasses} bg-gray-100 text-gray-800`;
+      case 'sent':
+        return `${baseClasses} bg-blue-100 text-blue-800`;
+      case 'accepted':
+        return `${baseClasses} bg-green-100 text-green-800`;
+      case 'rejected':
+        return `${baseClasses} bg-red-100 text-red-800`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-800`;
+    }
+  };
+
+  /**
+   * 取得狀態顯示文字
+   */
+  const getStatusText = (status: Quote['status']): string => {
+    switch (status) {
+      case 'draft': return '草稿';
+      case 'sent': return '已發送';
+      case 'accepted': return '已接受';
+      case 'rejected': return '已拒絕';
+      default: return '未知';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">載入中...</span>
+      </div>
+    );
+  }
+
+  if (!quote) {
+    return (
+      <div className="text-center py-12">
+        <h3 className="text-lg font-medium text-gray-900">找不到報價單</h3>
+        <p className="mt-1 text-sm text-gray-500">請檢查報價單編號是否正確</p>
+        <div className="mt-6">
+          <Link
+            to="/quotes"
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            返回報價單列表
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* 頁面標題和操作按鈕 */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => navigate('/quotes')}
+            className="text-gray-400 hover:text-gray-500"
+          >
+            <ArrowLeftIcon className="h-6 w-6" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              報價單 {quote.quote_number}
+            </h1>
+            <div className="mt-1 flex items-center space-x-3">
+              <span className={getStatusBadge(quote.status)}>
+                {getStatusText(quote.status)}
+              </span>
+              <span className="text-sm text-gray-500">
+                建立於 {new Date(quote.created_at).toLocaleDateString('zh-TW')}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-3 no-print">
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <ShareIcon className="-ml-0.5 mr-2 h-4 w-4" />
+            分享
+          </button>
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <PrinterIcon className="-ml-0.5 mr-2 h-4 w-4" />
+            列印
+          </button>
+          <button
+            onClick={handleExportPDF}
+            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <DocumentArrowDownIcon className="-ml-0.5 mr-2 h-4 w-4" />
+            匯出PDF
+          </button>
+          <Link
+            to={`/quotes/${quote.id}/edit`}
+            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          >
+            <PencilIcon className="-ml-1 mr-2 h-5 w-5" />
+            編輯
+          </Link>
+        </div>
+      </div>
+
+      {/* 報價單內容 */}
+      <div id="quote-preview" className="bg-white shadow overflow-hidden sm:rounded-lg print:shadow-none">
+        <div className="px-6 py-8">
+          {/* 公司標題 */}
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
+            <div className="mt-2 text-lg text-gray-600">
+              {/* TODO: 從設定中取得公司名稱 */}
+              您的公司名稱
+            </div>
+          </div>
+
+          {/* 基本資訊 */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 mb-8">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">客戶資訊</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm font-medium text-gray-500">公司名稱:</span>
+                  <span className="ml-2 text-sm text-gray-900">
+                    {quote.customer?.company_name || '未知客戶'}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">聯絡人:</span>
+                  <span className="ml-2 text-sm text-gray-900">{quote.contact_person}</span>
+                </div>
+                {quote.customer?.phone && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">電話:</span>
+                    <span className="ml-2 text-sm text-gray-900">{quote.customer.phone}</span>
+                  </div>
+                )}
+                {quote.customer?.email && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">電子郵件:</span>
+                    <span className="ml-2 text-sm text-gray-900">{quote.customer.email}</span>
+                  </div>
+                )}
+                {quote.customer?.address && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-500">地址:</span>
+                    <span className="ml-2 text-sm text-gray-900">{quote.customer.address}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">報價資訊</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-sm font-medium text-gray-500">報價單號:</span>
+                  <span className="ml-2 text-sm text-gray-900">{quote.quote_number}</span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">報價日期:</span>
+                  <span className="ml-2 text-sm text-gray-900">
+                    {new Date(quote.quote_date).toLocaleDateString('zh-TW')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">有效期限:</span>
+                  <span className="ml-2 text-sm text-gray-900">
+                    {new Date(quote.valid_until).toLocaleDateString('zh-TW')}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-gray-500">負責人:</span>
+                  <span className="ml-2 text-sm text-gray-900">
+                    {quote.staff?.name || '未知'}
+                    {quote.staff?.position && ` (${quote.staff.position})`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 報價項目表格 */}
+          <div className="mb-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">報價項目</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      項目
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      說明
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      數量
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      單位
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      單價
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      金額
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {quote.items?.map((item, index) => (
+                    <tr key={item.id || index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {item.product_name}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {item.description || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        {item.quantity.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.unit}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        NT$ {item.unit_price.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                        NT$ {item.amount.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 金額計算 */}
+          <div className="flex justify-end mb-8">
+            <div className="w-64">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">小計:</span>
+                  <span className="text-sm font-medium">NT$ {quote.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">稅額 ({quote.tax_rate}%):</span>
+                  <span className="text-sm font-medium">NT$ {quote.tax_amount.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-base font-medium text-gray-900">總計:</span>
+                  <span className="text-base font-bold text-gray-900">NT$ {quote.total.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 備註 */}
+          {quote.notes && (
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">備註</h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.notes}</p>
+              </div>
+            </div>
+          )}
+
+          {/* 銀行資訊 */}
+          {quote.bank && (
+            <div className="mb-8">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">匯款資訊</h3>
+              <div className="bg-blue-50 rounded-lg p-4">
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-sm font-medium text-blue-900">銀行名稱:</span>
+                    <span className="ml-2 text-sm text-blue-800">{quote.bank.bank_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-blue-900">帳戶號碼:</span>
+                    <span className="ml-2 text-sm text-blue-800">{quote.bank.account_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-blue-900">戶名:</span>
+                    <span className="ml-2 text-sm text-blue-800">{quote.bank.account_name}</span>
+                  </div>
+                  {quote.bank.branch_name && (
+                    <div>
+                      <span className="text-sm font-medium text-blue-900">分行:</span>
+                      <span className="ml-2 text-sm text-blue-800">{quote.bank.branch_name}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 頁尾 */}
+          <div className="text-center text-sm text-gray-500 border-t pt-6">
+            <p>感謝您的詢價，如有任何問題請隨時與我們聯繫</p>
+            {quote.staff?.phone && (
+              <p className="mt-1">聯絡電話: {quote.staff.phone}</p>
+            )}
+            {quote.staff?.email && (
+              <p className="mt-1">電子郵件: {quote.staff.email}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
