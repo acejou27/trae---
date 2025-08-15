@@ -25,7 +25,6 @@ const productSchema = z.object({
   description: z.string().optional(),
   unit: z.string().min(1, '單位為必填'),
   price: z.number().min(0, '價格不能為負數'),
-  category: z.string().optional(),
   notes: z.string().optional()
 });
 
@@ -49,7 +48,6 @@ export function ProductManagement(): JSX.Element {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [categoryFilter, setCategoryFilter] = useState('');
 
   /**
    * 載入產品資料
@@ -71,24 +69,13 @@ export function ProductManagement(): JSX.Element {
   });
 
   /**
-   * 獲取所有產品分類
-   */
-  const categories = Array.from(new Set(
-    products
-      .map(product => product.category)
-      .filter(category => category && category.trim() !== '')
-  ));
-
-  /**
    * 過濾產品列表
    */
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesCategory = !categoryFilter || product.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   });
 
   /**
@@ -101,7 +88,6 @@ export function ProductManagement(): JSX.Element {
       description: '',
       unit: '個',
       price: 0,
-      category: '',
       notes: ''
     });
     setIsModalOpen(true);
@@ -109,6 +95,7 @@ export function ProductManagement(): JSX.Element {
 
   /**
    * 開啟編輯產品模態框
+   * Updated: 2024-12-28
    */
   const handleEditProduct = (product: Product): void => {
     setEditingProduct(product);
@@ -117,33 +104,34 @@ export function ProductManagement(): JSX.Element {
       description: product.description || '',
       unit: product.unit,
       price: product.default_price,
-      category: product.category || '',
-      notes: product.description || ''
+      notes: product.description || '' // 從 description 欄位載入到 notes 表單欄位
     });
     setIsModalOpen(true);
   };
 
   /**
    * 提交表單
+   * Updated: 2024-12-28
    */
   const onSubmit = async (data: ProductFormData): Promise<void> => {
     try {
-      const productData = {
-        ...data,
-        description: data.description || undefined,
-        category: data.category || undefined,
-        notes: data.notes || undefined
-      };
-
       if (editingProduct) {
-        await updateProduct(editingProduct.id, productData);
+        // 更新產品時，將 notes 內容存到 description 欄位
+        const productUpdateData = {
+          name: data.name,
+          description: data.notes || null,
+          default_price: data.price,
+          unit: data.unit,
+          is_active: true
+        };
+        await updateProduct(editingProduct.id, productUpdateData);
       } else {
+        // 新增產品時，將 notes 內容存到 description 欄位
         const productCreateData = {
-          name: productData.name,
-          description: productData.notes || null,
-          category: productData.category || null,
-          default_price: productData.price,
-          unit: productData.unit,
+          name: data.name,
+          description: data.notes || null,
+          default_price: data.price,
+          unit: data.unit,
           is_active: true
         };
         await createProduct(productCreateData);
@@ -211,7 +199,7 @@ export function ProductManagement(): JSX.Element {
         </div>
       </div>
 
-      {/* 搜尋和篩選 */}
+      {/* 搜尋 */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 max-w-md">
           <div className="relative">
@@ -227,24 +215,10 @@ export function ProductManagement(): JSX.Element {
             />
           </div>
         </div>
-        <div className="w-full sm:w-48">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">所有分類</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
       {/* 產品統計 */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -258,25 +232,6 @@ export function ProductManagement(): JSX.Element {
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
                     {products.length}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <CubeIcon className="h-6 w-6 text-green-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    產品分類
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {categories.length}
                   </dd>
                 </dl>
               </div>
@@ -317,10 +272,10 @@ export function ProductManagement(): JSX.Element {
           <div className="p-6 text-center">
             <CubeIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              {searchTerm || categoryFilter ? '找不到符合條件的產品' : '尚無產品資料'}
+              {searchTerm ? '找不到符合條件的產品' : '尚無產品資料'}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || categoryFilter ? '請嘗試其他搜尋條件' : '點擊上方按鈕新增第一個產品'}
+              {searchTerm ? '請嘗試其他搜尋條件' : '點擊上方按鈕新增第一個產品'}
             </p>
           </div>
         ) : (
@@ -340,14 +295,10 @@ export function ProductManagement(): JSX.Element {
                           <p className="text-sm font-medium text-gray-900 truncate">
                             {product.name}
                           </p>
-                          {product.category && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {product.category}
-                            </span>
-                          )}
+  
                         </div>
                         {product.description && (
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-gray-500 whitespace-pre-wrap">
                             {product.description}
                           </p>
                         )}
@@ -466,17 +417,7 @@ export function ProductManagement(): JSX.Element {
                         )}
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        產品分類
-                      </label>
-                      <input
-                        type="text"
-                        {...register('category')}
-                        placeholder="例如：軟體、硬體、服務等"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
                         備註

@@ -326,7 +326,7 @@ export function BankManagement(): JSX.Element {
                           </p>
                         )}
                         {bank.notes && (
-                          <p className="text-sm text-gray-500 truncate">
+                          <p className="text-sm text-gray-500 whitespace-pre-wrap">
                             備註：{bank.notes}
                           </p>
                         )}

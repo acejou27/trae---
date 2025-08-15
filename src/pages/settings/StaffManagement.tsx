@@ -346,7 +346,7 @@ export function StaffManagement(): JSX.Element {
                           )}
                         </div>
                         {staffMember.notes && (
-                          <p className="text-sm text-gray-500 mt-1 truncate">
+                          <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">
                             備註：{staffMember.notes}
                           </p>
                         )}
