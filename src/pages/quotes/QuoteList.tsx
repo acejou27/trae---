@@ -14,6 +14,7 @@ import {
   DocumentArrowDownIcon
 } from '@heroicons/react/24/outline';
 import { useQuoteStore } from '../../stores/useQuoteStore';
+import { exportQuoteToPDF } from '../../utils/pdfExport';
 import type { Quote } from '../../types';
 
 /**
@@ -35,7 +36,7 @@ export function QuoteList(): JSX.Element {
   const { 
     quotes, 
     loading, 
-    error,
+
     fetchQuotes, 
     deleteQuote,
     fetchCustomers,
@@ -74,7 +75,7 @@ export function QuoteList(): JSX.Element {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      let aValue: any, bValue: any;
+      let aValue: string | number | Date, bValue: string | number | Date;
       
       switch (sortBy) {
         case 'date':
@@ -326,7 +327,7 @@ export function QuoteList(): JSX.Element {
                       <PencilIcon className="h-5 w-5" />
                     </Link>
                     <button
-                      onClick={() => {/* TODO: 實作PDF匯出 */}}
+                      onClick={() => exportQuoteToPDF('quote-view', quote)}
                       className="text-green-400 hover:text-green-500"
                       title="匯出PDF"
                     >

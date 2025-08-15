@@ -116,12 +116,21 @@ export const useQuoteStore = create<QuoteState>()(devtools(
     fetchQuoteById: async (id: string) => {
       set({ loading: true, error: null });
       try {
-        // TODO: 實作 Supabase 查詢
-        const { quotes } = get();
-        const quote = quotes.find(q => q.id === id);
-        set({ currentQuote: quote || null });
+        const { data, error } = await supabase
+          .from('quotes')
+          .select(`
+            *,
+            customer:customers(*),
+            staff:staff(*),
+            bank:banks(*)
+          `)
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        set({ currentQuote: data });
       } catch (error) {
-        set({ error: error instanceof Error ? error.message : '載入報價單失敗' });
+        set({ error: handleSupabaseError(error) });
       } finally {
         set({ loading: false });
       }

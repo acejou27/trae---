@@ -155,7 +155,7 @@ export async function exportQuoteListToPDF(
     
     // 資料行
     pdf.setFontSize(10);
-    quotes.forEach((quote, index) => {
+    quotes.forEach((quote) => {
       if (yPosition > 270) {
         pdf.addPage();
         yPosition = 20;
@@ -218,8 +218,7 @@ function getStatusText(status: Quote['status']): string {
  * @param quote - 報價單資料
  */
 export async function previewQuotePDF(
-  elementId: string,
-  quote: Quote
+  elementId: string
 ): Promise<void> {
   try {
     const element = document.getElementById(elementId);

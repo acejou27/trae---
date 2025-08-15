@@ -14,20 +14,19 @@ import {
   MagnifyingGlassIcon,
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
-import { useQuoteStore } from '../../stores/useQuoteStore';
+
 import type { Customer } from '../../types';
+import { useCustomerStore } from '../../stores/customerStore';
 
 /**
  * 客戶表單驗證 Schema
  */
 const customerSchema = z.object({
-  name: z.string().min(1, '客戶名稱為必填'),
+  company_name: z.string().min(1, '公司名稱為必填'),
   contact_person: z.string().min(1, '聯絡人為必填'),
   phone: z.string().min(1, '電話為必填'),
   email: z.string().email('請輸入有效的電子郵件').optional().or(z.literal('')),
-  address: z.string().optional(),
-  tax_id: z.string().optional(),
-  notes: z.string().optional()
+  address: z.string().optional()
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -40,12 +39,11 @@ export function CustomerManagement(): JSX.Element {
   const { 
     customers, 
     loading, 
-    error,
     fetchCustomers,
     createCustomer, 
     updateCustomer, 
     deleteCustomer 
-  } = useQuoteStore();
+  } = useCustomerStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -94,13 +92,11 @@ export function CustomerManagement(): JSX.Element {
   const handleEditCustomer = (customer: Customer): void => {
     setEditingCustomer(customer);
     reset({
-      name: customer.company_name,
+      company_name: customer.company_name,
       contact_person: customer.contact_person,
       phone: customer.phone,
       email: customer.email || '',
-      address: customer.address || '',
-      tax_id: customer.tax_id || '',
-      notes: customer.notes || ''
+      address: customer.address || ''
     });
     setIsModalOpen(true);
   };
@@ -111,14 +107,11 @@ export function CustomerManagement(): JSX.Element {
   const onSubmit = async (data: CustomerFormData): Promise<void> => {
     try {
       const customerData = {
-        company_name: data.name,
+        company_name: data.company_name,
         contact_person: data.contact_person,
         phone: data.phone,
         email: data.email || undefined,
-        address: data.address || undefined,
-        tax_id: data.tax_id || undefined,
-        notes: data.notes || undefined,
-        is_active: true
+        address: data.address || undefined
       };
 
       if (editingCustomer) {
@@ -127,9 +120,8 @@ export function CustomerManagement(): JSX.Element {
         await createCustomer(customerData);
       }
 
-      setIsModalOpen(false);
-      reset();
-      setEditingCustomer(null);
+      // 操作成功後關閉Modal並重置表單
+      closeModal();
     } catch (error) {
       console.error('儲存客戶資料失敗:', error);
     }
@@ -285,15 +277,15 @@ export function CustomerManagement(): JSX.Element {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">
-                        客戶名稱 *
+                        公司名稱 *
                       </label>
                       <input
                         type="text"
-                        {...register('name')}
+                        {...register('company_name')}
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       />
-                      {errors.name && (
-                        <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                      {errors.company_name && (
+                        <p className="mt-1 text-sm text-red-600">{errors.company_name.message}</p>
                       )}
                     </div>
                     <div>
@@ -345,26 +337,7 @@ export function CustomerManagement(): JSX.Element {
                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        統一編號
-                      </label>
-                      <input
-                        type="text"
-                        {...register('tax_id')}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        備註
-                      </label>
-                      <textarea
-                        {...register('notes')}
-                        rows={3}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
                   </div>
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

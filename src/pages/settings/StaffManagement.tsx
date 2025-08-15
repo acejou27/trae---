@@ -14,8 +14,9 @@ import {
   MagnifyingGlassIcon,
   UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { useQuoteStore } from '../../stores/useQuoteStore';
+
 import type { Staff } from '../../types';
+import { useStaffStore } from '../../stores/staffStore';
 
 /**
  * 負責人表單驗證 Schema
@@ -24,9 +25,7 @@ const staffSchema = z.object({
   name: z.string().min(1, '姓名為必填'),
   title: z.string().min(1, '職稱為必填'),
   phone: z.string().min(1, '電話為必填'),
-  email: z.string().email('請輸入有效的電子郵件').optional().or(z.literal('')),
-  department: z.string().optional(),
-  notes: z.string().optional()
+  email: z.string().email('請輸入有效的電子郵件').optional().or(z.literal(''))
 });
 
 type StaffFormData = z.infer<typeof staffSchema>;
@@ -38,18 +37,17 @@ type StaffFormData = z.infer<typeof staffSchema>;
 export function StaffManagement(): JSX.Element {
   const { 
     staff, 
-    loading, 
-    error,
+    loading,
     fetchStaff,
     createStaff, 
     updateStaff, 
     deleteStaff 
-  } = useQuoteStore();
+  } = useStaffStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<Staff | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
-  const [departmentFilter, setDepartmentFilter] = useState('');
+  // 移除departmentFilter，因為資料庫中不存在department欄位
 
   /**
    * 載入負責人資料
@@ -70,27 +68,18 @@ export function StaffManagement(): JSX.Element {
     resolver: zodResolver(staffSchema)
   });
 
-  /**
-   * 獲取所有部門
-   */
-  const departments = Array.from(new Set(
-    staff
-      .map(member => member.department)
-      .filter(department => department && department.trim() !== '')
-  ));
+  // 移除部門相關功能，因為資料庫中不存在department欄位
 
   /**
    * 過濾負責人列表
    */
   const filteredStaff = staff.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (member.title && member.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
       member.phone.includes(searchTerm) ||
       (member.email && member.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesDepartment = !departmentFilter || member.department === departmentFilter;
-    
-    return matchesSearch && matchesDepartment;
+    return matchesSearch;
   });
 
   /**
@@ -102,9 +91,7 @@ export function StaffManagement(): JSX.Element {
       name: '',
       title: '',
       phone: '',
-      email: '',
-      department: '',
-      notes: ''
+      email: ''
     });
     setIsModalOpen(true);
   };
@@ -116,41 +103,38 @@ export function StaffManagement(): JSX.Element {
     setEditingStaff(staffMember);
     reset({
       name: staffMember.name,
-      title: staffMember.position,
+      title: staffMember.title || '',
       phone: staffMember.phone,
-      email: staffMember.email || '',
-      department: staffMember.department || '',
-      notes: staffMember.notes || ''
+      email: staffMember.email || ''
     });
     setIsModalOpen(true);
   };
 
   /**
    * 提交表單
+   * Updated: 2024-12-28
    */
   const onSubmit = async (data: StaffFormData): Promise<void> => {
     try {
       const staffData = {
         name: data.name,
-        position: data.title,
+        title: data.title,
         phone: data.phone,
-        email: data.email || undefined,
-        department: data.department || undefined,
-        notes: data.notes || undefined,
-        is_active: true
+        email: data.email || undefined
       };
 
+      // 執行創建或更新操作
       if (editingStaff) {
         await updateStaff(editingStaff.id, staffData);
       } else {
         await createStaff(staffData);
       }
 
-      setIsModalOpen(false);
-      reset();
-      setEditingStaff(null);
+      // 操作成功後關閉Modal並重置表單
+      closeModal();
     } catch (error) {
       console.error('儲存負責人資料失敗:', error);
+      // 發生錯誤時不關閉Modal，讓用戶可以重試
     }
   };
 
@@ -213,20 +197,7 @@ export function StaffManagement(): JSX.Element {
             />
           </div>
         </div>
-        <div className="w-full sm:w-48">
-          <select
-            value={departmentFilter}
-            onChange={(e) => setDepartmentFilter(e.target.value)}
-            className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="">所有部門</option>
-            {departments.map((department) => (
-              <option key={department} value={department}>
-                {department}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* 移除部門篩選功能 */}
       </div>
 
       {/* 負責人統計 */}
@@ -250,25 +221,7 @@ export function StaffManagement(): JSX.Element {
             </div>
           </div>
         </div>
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserGroupIcon className="h-6 w-6 text-blue-600" aria-hidden="true" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    部門數量
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {departments.length}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* 移除部門統計 */}
         <div className="bg-white overflow-hidden shadow rounded-lg">
           <div className="p-5">
             <div className="flex items-center">
@@ -301,10 +254,10 @@ export function StaffManagement(): JSX.Element {
           <div className="p-6 text-center">
             <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">
-              {searchTerm || departmentFilter ? '找不到符合條件的負責人' : '尚無負責人資料'}
+              {searchTerm ? '找不到符合條件的負責人' : '尚無負責人資料'}
             </h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || departmentFilter ? '請嘗試其他搜尋條件' : '點擊上方按鈕新增第一個負責人'}
+              {searchTerm ? '請嘗試其他搜尋條件' : '點擊上方按鈕新增第一個負責人'}
             </p>
           </div>
         ) : (
@@ -327,13 +280,9 @@ export function StaffManagement(): JSX.Element {
                             {staffMember.name}
                           </p>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            {staffMember.position}
+                            {staffMember.title || '未設定職稱'}
                           </span>
-                          {staffMember.department && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {staffMember.department}
-                            </span>
-                          )}
+                          {/* 移除部門顯示 */}
                         </div>
                         <div className="flex items-center space-x-4 mt-1">
                           <p className="text-sm text-gray-500">
@@ -345,11 +294,7 @@ export function StaffManagement(): JSX.Element {
                             </p>
                           )}
                         </div>
-                        {staffMember.notes && (
-                          <p className="text-sm text-gray-500 mt-1 whitespace-pre-wrap">
-                            備註：{staffMember.notes}
-                          </p>
-                        )}
+                        {/* 移除備註顯示 */}
                       </div>
                     </div>
                   </div>
@@ -443,27 +388,8 @@ export function StaffManagement(): JSX.Element {
                         <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
                       )}
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        部門
-                      </label>
-                      <input
-                        type="text"
-                        {...register('department')}
-                        placeholder="例如：業務部、技術部、行政部等"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        備註
-                      </label>
-                      <textarea
-                        {...register('notes')}
-                        rows={3}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
+
                   </div>
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
 
 // 環境變數檢查
@@ -39,7 +40,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
  * @param error - Supabase 錯誤物件
  * @returns 格式化的錯誤訊息
  */
-export const handleSupabaseError = (error: any): string => {
+export const handleSupabaseError = (error: PostgrestError | Error | null): string => {
   if (!error) return '未知錯誤';
   
   // 常見錯誤訊息對應
@@ -54,7 +55,7 @@ export const handleSupabaseError = (error: any): string => {
     'duplicate key value violates unique constraint': '資料重複，違反唯一性約束'
   };
   
-  const message = error.message || error.error_description || '操作失敗';
+  const message = error.message || '操作失敗';
   return errorMessages[message] || message;
 };
 

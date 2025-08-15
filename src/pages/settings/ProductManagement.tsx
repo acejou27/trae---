@@ -24,8 +24,7 @@ const productSchema = z.object({
   name: z.string().min(1, '產品名稱為必填'),
   description: z.string().optional(),
   unit: z.string().min(1, '單位為必填'),
-  price: z.number().min(0, '價格不能為負數'),
-  notes: z.string().optional()
+  price: z.number().min(0, '價格不能為負數')
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -38,7 +37,6 @@ export function ProductManagement(): JSX.Element {
   const { 
     products, 
     loading, 
-    error,
     fetchProducts,
     createProduct, 
     updateProduct, 
@@ -87,8 +85,7 @@ export function ProductManagement(): JSX.Element {
       name: '',
       description: '',
       unit: '個',
-      price: 0,
-      notes: ''
+      price: 0
     });
     setIsModalOpen(true);
   };
@@ -101,10 +98,9 @@ export function ProductManagement(): JSX.Element {
     setEditingProduct(product);
     reset({
       name: product.name,
-      description: product.description || '',
+      description: product.description || '', // 產品說明對應到 description 欄位
       unit: product.unit,
-      price: product.default_price,
-      notes: product.description || '' // 從 description 欄位載入到 notes 表單欄位
+      price: product.default_price
     });
     setIsModalOpen(true);
   };
@@ -116,30 +112,27 @@ export function ProductManagement(): JSX.Element {
   const onSubmit = async (data: ProductFormData): Promise<void> => {
     try {
       if (editingProduct) {
-        // 更新產品時，將 notes 內容存到 description 欄位
+        // 更新產品時，description 欄位對應產品說明
         const productUpdateData = {
           name: data.name,
-          description: data.notes || null,
+          description: data.description || null,
           default_price: data.price,
-          unit: data.unit,
-          is_active: true
+          unit: data.unit
         };
         await updateProduct(editingProduct.id, productUpdateData);
       } else {
-        // 新增產品時，將 notes 內容存到 description 欄位
+        // 新增產品時，description 欄位對應產品說明
         const productCreateData = {
           name: data.name,
-          description: data.notes || null,
+          description: data.description || null,
           default_price: data.price,
-          unit: data.unit,
-          is_active: true
+          unit: data.unit
         };
         await createProduct(productCreateData);
       }
 
-      setIsModalOpen(false);
-      reset();
-      setEditingProduct(null);
+      // 操作成功後關閉Modal並重置表單
+      closeModal();
     } catch (error) {
       console.error('儲存產品資料失敗:', error);
     }
@@ -418,16 +411,7 @@ export function ProductManagement(): JSX.Element {
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        備註
-                      </label>
-                      <textarea
-                        {...register('notes')}
-                        rows={2}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
+
                   </div>
                 </div>
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">

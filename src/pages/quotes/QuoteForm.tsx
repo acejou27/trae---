@@ -11,8 +11,7 @@ import { z } from 'zod';
 import {
   PlusIcon,
   TrashIcon,
-  ArrowLeftIcon,
-  DocumentTextIcon
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import { useQuoteStore } from '../../stores/useQuoteStore';
 import { generateQuoteNumber } from '../../utils/format';
@@ -56,16 +55,17 @@ export function QuoteForm(): JSX.Element {
     products,
     staff,
     banks,
-    loading,
-    error,
+
     fetchQuotes,
+    fetchQuoteById,
     createQuote,
     updateQuote,
     fetchCustomers,
     fetchProducts,
     fetchStaff,
     fetchBanks,
-    setCurrentQuote,
+    fetchQuoteItems,
+
     clearCurrentQuote
   } = useQuoteStore();
 
@@ -87,7 +87,7 @@ export function QuoteForm(): JSX.Element {
       customer_id: '',
       contact_person: '',
       quote_date: new Date().toISOString().split('T')[0],
-      valid_until: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      valid_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       staff_id: '',
       bank_id: '',
       tax_rate: 5,
@@ -137,9 +137,7 @@ export function QuoteForm(): JSX.Element {
     
     if (isEditing && id) {
       // 載入報價單資料
-      fetchQuotes().then(() => {
-        // 這裡需要根據ID找到對應的報價單
-        // 暫時使用currentQuote，實際應該根據ID查詢
+      fetchQuoteById(id).then(async () => {
         if (currentQuote && currentQuote.id === id) {
           // 填入表單資料
           setValue('customer_id', currentQuote.customer_id);
@@ -151,17 +149,22 @@ export function QuoteForm(): JSX.Element {
           setValue('tax_rate', currentQuote.tax_rate);
           setValue('notes', currentQuote.notes || '');
           
-          // 填入項目資料
-          if (currentQuote.items && currentQuote.items.length > 0) {
-            setValue('items', currentQuote.items.map(item => ({
-              product_name: item.product_name,
-              description: item.description || '',
-              quantity: item.quantity,
-              unit: item.unit,
-              unit_price: item.unit_price,
-              amount: item.amount,
-              sort_order: item.sort_order
-            })));
+          // 載入並填入項目資料
+          try {
+            const items = await fetchQuoteItems(id);
+            if (items && items.length > 0) {
+              setValue('items', items.map(item => ({
+                product_name: item.product_name,
+                description: item.description || '',
+                quantity: item.quantity,
+                unit: item.unit,
+                unit_price: item.unit_price,
+                amount: item.amount,
+                sort_order: item.sort_order
+              })));
+            }
+          } catch (error) {
+            console.error('載入報價單項目失敗:', error);
           }
         }
       });
@@ -172,7 +175,7 @@ export function QuoteForm(): JSX.Element {
         clearCurrentQuote();
       }
     };
-  }, [isEditing, id, fetchCustomers, fetchProducts, fetchStaff, fetchBanks, fetchQuotes, currentQuote, setValue, clearCurrentQuote]);
+  }, [isEditing, id, fetchCustomers, fetchProducts, fetchStaff, fetchBanks, fetchQuoteById, fetchQuoteItems, currentQuote, setValue, clearCurrentQuote]);
 
   /**
    * 計算項目金額
@@ -230,17 +233,21 @@ export function QuoteForm(): JSX.Element {
       const taxAmount = subtotal * (data.tax_rate / 100);
       const total = subtotal + taxAmount;
       
-      const { items, ...quoteFormData } = data;
-      
       const quoteData = {
-        ...quoteFormData,
-        quote_number: generateQuoteNumber(),
-        subtotal,
-        tax_amount: taxAmount,
-        total,
-        status: 'draft' as const,
-        notes: data.notes || ''
-      };
+          customer_id: data.customer_id,
+          contact_person: data.contact_person,
+          quote_date: data.quote_date,
+          valid_until: data.valid_until,
+          staff_id: data.staff_id,
+          bank_id: data.bank_id,
+          tax_rate: data.tax_rate,
+          notes: data.notes || '',
+          quote_number: generateQuoteNumber(),
+          subtotal,
+          tax_amount: taxAmount,
+          total,
+          status: 'draft' as const
+        };
       
       if (isEditing && id) {
         // 更新現有報價單
@@ -363,7 +370,7 @@ export function QuoteForm(): JSX.Element {
                 <option value="">請選擇負責人</option>
                 {staff.map(person => (
                   <option key={person.id} value={person.id}>
-                    {person.name} {person.position && `(${person.position})`}
+                    {person.name} {person.title && `(${person.title})`}
                   </option>
                 ))}
               </select>

@@ -24,9 +24,7 @@ export function QuoteView(): JSX.Element {
   const navigate = useNavigate();
   const { 
     quotes, 
-    currentQuote, 
     loading,
-    error,
     fetchQuotes,
     fetchQuoteItems,
     setCurrentQuote,
@@ -97,7 +95,7 @@ export function QuoteView(): JSX.Element {
     
     try {
       const { previewQuotePDF } = await import('../../utils/pdfExport');
-      await previewQuotePDF('quote-preview', quote);
+      await previewQuotePDF('quote-preview');
     } catch (error) {
       console.error('PDF預覽失敗:', error);
       alert('PDF預覽失敗，請稍後再試');
@@ -292,7 +290,7 @@ export function QuoteView(): JSX.Element {
                   <span className="text-sm font-medium text-gray-500">負責人:</span>
                   <span className="ml-2 text-sm text-gray-900">
                     {quote.staff?.name || '未知'}
-                    {quote.staff?.position && ` (${quote.staff.position})`}
+                    {quote.staff?.title && ` (${quote.staff.title})`}
                   </span>
                 </div>
               </div>

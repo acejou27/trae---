@@ -71,7 +71,7 @@ export function useQuoteForm({ quoteId, onSuccess, onError }: UseQuoteFormOption
   } = useQuoteStore();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [items, setItems] = useState<QuoteItem[]>([]);
+  const [items] = useState<QuoteItem[]>([]);
   
   const form = useForm<QuoteFormData>({
     resolver: zodResolver(quoteFormSchema),
@@ -296,6 +296,6 @@ export function useQuoteForm({ quoteId, onSuccess, onError }: UseQuoteFormOption
     calculateTax,
     calculateTotal,
     generateQuoteNumber,
-    onSubmit: form.handleSubmit(onSubmit as any)
+    onSubmit: form.handleSubmit(onSubmit)
   };
 }

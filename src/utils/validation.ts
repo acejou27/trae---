@@ -141,7 +141,7 @@ export function isValidStringLength(text: string, minLength: number, maxLength: 
  * @param value - 值
  * @returns 是否為有效的必填值
  */
-export function isRequired(value: any): boolean {
+export function isRequired(value: unknown): boolean {
   if (value === null || value === undefined) {
     return false;
   }

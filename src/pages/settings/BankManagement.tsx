@@ -14,8 +14,9 @@ import {
   MagnifyingGlassIcon,
   BanknotesIcon
 } from '@heroicons/react/24/outline';
-import { useQuoteStore } from '../../stores/useQuoteStore';
+
 import type { Bank } from '../../types';
+import { useBankStore } from '../../stores/bankStore';
 
 /**
  * 銀行資料表單驗證 Schema
@@ -38,13 +39,12 @@ type BankFormData = z.infer<typeof bankSchema>;
 export function BankManagement(): JSX.Element {
   const { 
     banks, 
-    loading, 
-    error,
+    loading,
     fetchBanks,
     createBank, 
     updateBank, 
     deleteBank 
-  } = useQuoteStore();
+  } = useBankStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBank, setEditingBank] = useState<Bank | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -130,9 +130,8 @@ export function BankManagement(): JSX.Element {
         await createBank(bankData);
       }
 
-      setIsModalOpen(false);
-      reset();
-      setEditingBank(null);
+      // 操作成功後關閉Modal並重置表單
+      closeModal();
     } catch (error) {
       console.error('儲存銀行資料失敗:', error);
     }

@@ -18,12 +18,9 @@ export interface Customer {
   id: string;
   company_name: string;
   contact_person: string;
-  phone?: string;
-  email?: string;
-  address?: string;
-  tax_id?: string;
-  notes?: string;
-  is_active: boolean;
+  phone: string;
+  email: string;
+  address: string;
   created_at: string;
   updated_at: string;
 }
@@ -33,10 +30,8 @@ export interface Product {
   id: string;
   name: string;
   description?: string;
-  category?: string;
   unit: string;
   default_price: number;
-  is_active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -47,10 +42,7 @@ export interface Staff {
   name: string;
   email?: string;
   phone?: string;
-  position: string;
-  department?: string;
-  notes?: string;
-  is_active: boolean;
+  title: string;
   created_at: string;
   updated_at: string;
 }

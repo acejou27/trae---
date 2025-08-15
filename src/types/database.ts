@@ -39,9 +39,6 @@ export interface Database {
           phone: string | null;
           email: string | null;
           address: string | null;
-          tax_id: string | null;
-          notes: string | null;
-          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -52,9 +49,6 @@ export interface Database {
           phone?: string | null;
           email?: string | null;
           address?: string | null;
-          tax_id?: string | null;
-          notes?: string | null;
-          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -65,9 +59,6 @@ export interface Database {
           phone?: string | null;
           email?: string | null;
           address?: string | null;
-          tax_id?: string | null;
-          notes?: string | null;
-          is_active?: boolean;
           updated_at?: string;
         };
       };
@@ -76,10 +67,8 @@ export interface Database {
           id: string;
           name: string;
           description?: string;
-          category?: string;
           unit: string;
           default_price: number;
-          is_active: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -87,10 +76,8 @@ export interface Database {
           id?: string;
           name: string;
           description?: string;
-          category?: string;
           unit: string;
           default_price: number;
-          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -98,10 +85,8 @@ export interface Database {
           id?: string;
           name?: string;
           description?: string;
-          category?: string;
           unit?: string;
           default_price?: number;
-          is_active?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -112,10 +97,7 @@ export interface Database {
           name: string;
           email?: string;
           phone?: string;
-          position: string;
-          department?: string;
-          notes?: string;
-          is_active: boolean;
+          title: string;
           created_at: string;
           updated_at: string;
         };
@@ -124,10 +106,7 @@ export interface Database {
           name: string;
           email?: string;
           phone?: string;
-          position: string;
-          department?: string;
-          notes?: string;
-          is_active?: boolean;
+          title: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -136,10 +115,7 @@ export interface Database {
           name?: string;
           email?: string;
           phone?: string;
-          position?: string;
-          department?: string;
-          notes?: string;
-          is_active?: boolean;
+          title?: string;
           created_at?: string;
           updated_at?: string;
         };

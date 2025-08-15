@@ -4,6 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import type { PostgrestError, Session } from '@supabase/supabase-js';
 import type {
   Quote,
   QuoteItem,
@@ -36,7 +37,7 @@ class ApiError extends Error {
 /**
  * 處理 Supabase 回應
  */
-function handleSupabaseResponse<T>(response: { data: T | null; error: any }) {
+function handleSupabaseResponse<T>(response: { data: T | null; error: PostgrestError | null }) {
   if (response.error) {
     throw new ApiError(response.error.message, response.error.code);
   }
@@ -178,7 +179,7 @@ export const customerApi = {
     const response = await supabase
       .from('customers')
       .select('*')
-      .order('name');
+      .order('company_name');
     
     return handleSupabaseResponse(response) || [];
   },
@@ -242,8 +243,8 @@ export const customerApi = {
     const response = await supabase
       .from('customers')
       .select('*')
-      .or(`name.ilike.%${query}%,contact_person.ilike.%${query}%,email.ilike.%${query}%`)
-      .order('name');
+      .or(`company_name.ilike.%${query}%,contact_person.ilike.%${query}%,email.ilike.%${query}%`)
+      .order('company_name');
     
     return handleSupabaseResponse(response) || [];
   }
@@ -516,7 +517,7 @@ export const authApi = {
   /**
    * 監聽身份驗證狀態變化
    */
-  onAuthStateChange(callback: (event: string, session: any) => void) {
+  onAuthStateChange(callback: (event: string, session: Session | null) => void) {
     return supabase.auth.onAuthStateChange(callback);
   }
 };
