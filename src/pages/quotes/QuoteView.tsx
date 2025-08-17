@@ -24,8 +24,10 @@ export function QuoteView(): JSX.Element {
   const navigate = useNavigate();
   const { 
     quotes, 
+    currentQuote,
     loading,
     fetchQuotes,
+    fetchQuoteById,
     fetchQuoteItems,
     setCurrentQuote,
     clearCurrentQuote
@@ -38,20 +40,15 @@ export function QuoteView(): JSX.Element {
   useEffect(() => {
     const loadQuote = async () => {
       if (id) {
-        // 先從 store 中尋找報價單
-        let foundQuote = quotes.find(q => q.id === id);
-        
-        if (!foundQuote) {
-          // 如果 store 中沒有，從 API 載入
-          await fetchQuotes();
-          foundQuote = quotes.find(q => q.id === id);
-        }
-        
-        if (foundQuote) {
+        try {
+          // 直接使用 fetchQuoteById 載入特定報價單
+          await fetchQuoteById(id);
+          
           // 載入報價單項目
           await fetchQuoteItems(id);
-          setQuote(foundQuote);
-          setCurrentQuote(foundQuote);
+        } catch (error) {
+          console.error('載入報價單失敗:', error);
+          setQuote(null);
         }
       }
     };
@@ -62,7 +59,14 @@ export function QuoteView(): JSX.Element {
     return () => {
       clearCurrentQuote();
     };
-  }, [id, quotes, fetchQuotes, fetchQuoteItems, setCurrentQuote, clearCurrentQuote]);
+  }, [id]); // 只依賴 id，避免無限循環
+  
+  // 監聽 currentQuote 的變化
+  useEffect(() => {
+    if (currentQuote && currentQuote.id === id) {
+      setQuote(currentQuote);
+    }
+  }, [currentQuote, id]);
 
   /**
    * 處理列印
@@ -72,33 +76,33 @@ export function QuoteView(): JSX.Element {
   };
 
   /**
-   * 處理PDF匯出
+   * 處理HTML匯出
    */
-  const handleExportPDF = async (): Promise<void> => {
+  const handleExportHTML = async (): Promise<void> => {
     if (!quote) return;
     
     try {
-      const { exportQuoteToPDF } = await import('../../utils/pdfExport');
-      await exportQuoteToPDF('quote-preview', quote);
-      alert('PDF匯出成功！');
+      const { exportQuoteToHTML } = await import('../../utils/htmlExport');
+      await exportQuoteToHTML(quote);
+      alert('HTML匯出成功！');
     } catch (error) {
-      console.error('PDF匯出失敗:', error);
-      alert('PDF匯出失敗，請稍後再試');
+      console.error('HTML匯出失敗:', error);
+      alert('HTML匯出失敗，請稍後再試');
     }
   };
 
   /**
-   * 處理分享
+   * 處理分享/預覽
    */
   const handleShare = async (): Promise<void> => {
     if (!quote) return;
     
     try {
-      const { previewQuotePDF } = await import('../../utils/pdfExport');
-      await previewQuotePDF('quote-preview');
+      const { previewQuoteHTML } = await import('../../utils/htmlExport');
+      previewQuoteHTML(quote);
     } catch (error) {
-      console.error('PDF預覽失敗:', error);
-      alert('PDF預覽失敗，請稍後再試');
+      console.error('HTML預覽失敗:', error);
+      alert('HTML預覽失敗，請稍後再試');
     }
   };
 
@@ -203,11 +207,11 @@ export function QuoteView(): JSX.Element {
             列印
           </button>
           <button
-            onClick={handleExportPDF}
+            onClick={handleExportHTML}
             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
             <DocumentArrowDownIcon className="-ml-0.5 mr-2 h-4 w-4" />
-            匯出PDF
+            匯出HTML
           </button>
           <Link
             to={`/quotes/${quote.id}/edit`}
