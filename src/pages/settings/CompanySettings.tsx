@@ -286,11 +286,15 @@ export function CompanySettings(): JSX.Element {
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               {settings.logo ? (
                 <div className="space-y-4">
-                  <img
-                    src={settings.logo}
-                    alt="公司Logo"
-                    className="mx-auto max-h-32 max-w-full object-contain"
-                  />
+                  <div className="flex justify-center">
+                    <img
+                      src={settings.logo}
+                      alt="公司Logo"
+                      className="object-contain border border-gray-200 rounded"
+                      style={{ width: '120px', height: '120px' }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">預覽尺寸：120 x 120 像素</p>
                   <button
                     onClick={handleRemoveLogo}
                     className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
@@ -301,10 +305,15 @@ export function CompanySettings(): JSX.Element {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <PhotoIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <div className="flex justify-center">
+                    <div className="w-30 h-30 border-2 border-dashed border-gray-300 rounded flex items-center justify-center" style={{ width: '120px', height: '120px' }}>
+                      <PhotoIcon className="h-12 w-12 text-gray-400" />
+                    </div>
+                  </div>
                   <div>
                     <p className="text-sm text-gray-600">點擊上傳公司Logo</p>
                     <p className="text-xs text-gray-500 mt-1">
+                      建議尺寸：120 x 120 像素<br/>
                       支援 JPG、PNG 格式，檔案大小不超過 2MB
                     </p>
                   </div>

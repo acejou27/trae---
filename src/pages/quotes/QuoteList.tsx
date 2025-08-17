@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -33,10 +33,10 @@ const statusOptions = [
  * 提供報價單的查看、搜尋、篩選和管理功能
  */
 export function QuoteList(): JSX.Element {
+  const navigate = useNavigate();
   const { 
     quotes, 
     loading, 
-
     fetchQuotes, 
     deleteQuote,
     updateQuoteStatus,
@@ -159,7 +159,6 @@ export function QuoteList(): JSX.Element {
       alert('列印失敗，請稍後再試');
     }
   };
-
 
 
   /**
@@ -313,9 +312,13 @@ export function QuoteList(): JSX.Element {
         ) : filteredQuotes.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {filteredQuotes.map((quote) => (
-              <li key={quote.id} className="px-6 py-4">
+              <li 
+                key={quote.id} 
+                className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                onClick={() => navigate(`/quotes/${quote.id}`)}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 flex-1">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
                         <p className="text-sm font-medium text-gray-900 truncate">
@@ -323,7 +326,11 @@ export function QuoteList(): JSX.Element {
                         </p>
                         <select
                           value={quote.status}
-                          onChange={(e) => handleStatusChange(quote.id, e.target.value as Quote['status'])}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(quote.id, e.target.value as Quote['status']);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
                           className={`${getStatusBadge(quote.status)} border-0 bg-transparent cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none`}
                         >
                           <option value="draft">草稿</option>
@@ -351,7 +358,7 @@ export function QuoteList(): JSX.Element {
                   </div>
                   
                   {/* 操作按鈕 */}
-                  <div className="flex items-center space-x-2 ml-4">
+                  <div className="flex items-center space-x-2 ml-4" onClick={(e) => e.stopPropagation()}>
                     <Link
                       to={`/quotes/${quote.id}/edit`}
                       className="text-blue-400 hover:text-blue-500"

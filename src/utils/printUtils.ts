@@ -82,7 +82,7 @@ function getCompanySettings() {
  */
 function generatePrintHTML(quote: Quote, companySettings: any): string {
   const logoHtml = companySettings.logo 
-    ? `<img src="${companySettings.logo}" alt="公司Logo" style="max-height: 80px; max-width: 200px; margin-bottom: 20px;">` 
+    ? `<img src="${companySettings.logo}" alt="公司Logo" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;">` 
     : '';
 
   return `

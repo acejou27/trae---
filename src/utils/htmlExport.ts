@@ -96,7 +96,7 @@ function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
   <div class="quote-container">
     <!-- 公司標題 -->
     <div class="header">
-      ${companySettings.logo ? `<div class="company-logo"><img src="${companySettings.logo}" alt="公司Logo" /></div>` : ''}
+      ${companySettings.logo ? `<div class="company-logo"><img src="${companySettings.logo}" alt="公司Logo" style="width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px;" /></div>` : ''}
       <h1>報價單</h1>
       <div class="company-name">${companySettings.companyName}</div>
       ${companySettings.address ? `<div class="company-address">${companySettings.address}</div>` : ''}
@@ -267,6 +267,7 @@ function getQuoteStyles(): string {
       font-weight: bold;
     }
     
+<<<<<<< HEAD
     .company-logo {
       margin-bottom: 15px;
     }
@@ -303,6 +304,12 @@ function getQuoteStyles(): string {
     .company-tax-id {
       font-size: 0.9em;
       color: #7f8c8d;
+=======
+    .company-name {
+      font-size: 1.2em;
+      color: #7f8c8d;
+      font-weight: 500;
+>>>>>>> 0e18d87 (feat(报价单): 添加HTML导出功能并优化PDF导出)
     }
     
     .quote-info {

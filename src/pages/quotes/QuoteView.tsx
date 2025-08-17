@@ -15,6 +15,12 @@ import {
 import { useQuoteStore } from '../../stores/useQuoteStore';
 import type { Quote } from '../../types';
 
+// 公司設定介面
+interface CompanySettings {
+  companyName: string;
+  logo: string;
+}
+
 /**
  * 報價單查看組件
  * 提供報價單的詳細查看、列印和匯出功能
@@ -33,6 +39,10 @@ export function QuoteView(): JSX.Element {
     clearCurrentQuote
   } = useQuoteStore();
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    companyName: '您的公司名稱',
+    logo: ''
+  });
 
   /**
    * 載入報價單資料
@@ -54,6 +64,17 @@ export function QuoteView(): JSX.Element {
     };
     
     loadQuote();
+    
+    // 載入公司設定
+    const savedSettings = localStorage.getItem('companySettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setCompanySettings(settings);
+      } catch (error) {
+        console.error('載入公司設定失敗:', error);
+      }
+    }
     
     // 清理函數
     return () => {
@@ -228,11 +249,19 @@ export function QuoteView(): JSX.Element {
         <div className="px-6 py-8">
           {/* 公司標題 */}
           <div className="text-center mb-8">
+            {/* 公司Logo */}
+            {companySettings.logo && (
+              <div className="flex justify-center mb-4">
+                <img 
+                  src={companySettings.logo} 
+                  alt="公司Logo" 
+                  className="w-30 h-30 object-contain"
+                  style={{ width: '120px', height: '120px' }}
+                />
+              </div>
+            )}
             <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
-            <div className="mt-2 text-lg text-gray-600">
-              {/* TODO: 從設定中取得公司名稱 */}
-              您的公司名稱
-            </div>
+
           </div>
 
           {/* 基本資訊 */}
@@ -419,10 +448,26 @@ export function QuoteView(): JSX.Element {
           <div className="text-center text-sm text-gray-500 border-t pt-6">
             <p>感謝您的詢價，如有任何問題請隨時與我們聯繫</p>
             {quote.staff?.phone && (
-              <p className="mt-1">聯絡電話: {quote.staff.phone}</p>
+              <p className="mt-1">
+                聯絡電話: 
+                <a 
+                  href={`tel:${quote.staff.phone}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                >
+                  {quote.staff.phone}
+                </a>
+              </p>
             )}
             {quote.staff?.email && (
-              <p className="mt-1">電子郵件: {quote.staff.email}</p>
+              <p className="mt-1">
+                電子郵件: 
+                <a 
+                  href={`mailto:${quote.staff.email}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                >
+                  {quote.staff.email}
+                </a>
+              </p>
             )}
           </div>
         </div>

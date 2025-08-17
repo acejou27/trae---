@@ -263,7 +263,7 @@ export function StaffManagement(): JSX.Element {
         ) : (
           <ul className="divide-y divide-gray-200">
             {filteredStaff.map((staffMember) => (
-              <li key={staffMember.id} className="px-6 py-4">
+              <li key={staffMember.id} className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200" onClick={() => handleEditStaff(staffMember)}>
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
@@ -301,14 +301,20 @@ export function StaffManagement(): JSX.Element {
                   <div className="flex items-center space-x-2">
                     <button
                       type="button"
-                      onClick={() => handleEditStaff(staffMember)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditStaff(staffMember);
+                      }}
                       className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <PencilIcon className="h-4 w-4" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDeleteConfirm(staffMember.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteConfirm(staffMember.id);
+                      }}
                       className="inline-flex items-center p-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                     >
                       <TrashIcon className="h-4 w-4" aria-hidden="true" />

@@ -14,7 +14,8 @@ import {
   UsersIcon,
   CubeIcon,
   UserGroupIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../lib/utils';
 
@@ -51,6 +52,11 @@ const navigation: NavItem[] = [
     href: '/settings',
     icon: CogIcon,
     children: [
+      {
+        name: '公司設定',
+        href: '/settings/company',
+        icon: BuildingOfficeIcon
+      },
       {
         name: '客戶管理',
         href: '/settings/customers',
