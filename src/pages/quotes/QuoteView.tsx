@@ -459,13 +459,39 @@ export function QuoteView(): JSX.Element {
               </p>
             )}
             {quote.staff?.email && (
-              <p className="mt-1">
-                電子郵件: 
+              <>
+                <p className="mt-1">
+                  電子郵件: 
+                  <a 
+                    href={`mailto:${quote.staff.email}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                  >
+                    {quote.staff.email}
+                  </a>
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  技術提供：
+                  <a 
+                    href="https://zhenhe-dm.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                  >
+                    振禾有限公司
+                  </a>
+                </p>
+              </>
+            )}
+            {!quote.staff?.email && (
+              <p className="mt-2 text-sm text-gray-600">
+                技術提供：
                 <a 
-                  href={`mailto:${quote.staff.email}`}
+                  href="https://zhenhe-dm.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
                 >
-                  {quote.staff.email}
+                  振禾有限公司
                 </a>
               </p>
             )}
