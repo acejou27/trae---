@@ -10,7 +10,8 @@ import {
   CubeIcon,
   UserGroupIcon,
   BanknotesIcon,
-  CogIcon
+  CogIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { useQuoteStore } from '../../stores/useQuoteStore';
 
@@ -37,6 +38,13 @@ export function Settings(): JSX.Element {
    * 設定項目配置
    */
   const settingItems: SettingItem[] = [
+    {
+      title: '公司設定',
+      description: '設定公司基本資訊和Logo，這些資訊將顯示在報價單上',
+      href: '/settings/company',
+      icon: BuildingOfficeIcon,
+      color: 'bg-indigo-500'
+    },
     {
       title: '客戶管理',
       description: '管理客戶資料，包括公司名稱、聯絡人、電話、地址等資訊',

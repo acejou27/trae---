@@ -126,31 +126,38 @@ export function QuoteForm(): JSX.Element {
   const total = subtotal + taxAmount;
 
   /**
-   * 載入基礎資料和編輯資料
+   * 載入基礎資料
    */
   useEffect(() => {
-    // 載入基礎資料
     fetchCustomers();
     fetchProducts();
     fetchStaff();
     fetchBanks();
-    
+  }, [fetchCustomers, fetchProducts, fetchStaff, fetchBanks]);
+
+  /**
+   * 載入編輯資料
+   */
+  useEffect(() => {
     if (isEditing && id) {
-      // 載入報價單資料
-      fetchQuoteById(id).then(async () => {
-        if (currentQuote && currentQuote.id === id) {
-          // 填入表單資料
-          setValue('customer_id', currentQuote.customer_id);
-          setValue('contact_person', currentQuote.contact_person);
-          setValue('quote_date', currentQuote.quote_date);
-          setValue('valid_until', currentQuote.valid_until);
-          setValue('staff_id', currentQuote.staff_id);
-          setValue('bank_id', currentQuote.bank_id);
-          setValue('tax_rate', currentQuote.tax_rate);
-          setValue('notes', currentQuote.notes || '');
+      const loadQuoteData = async () => {
+        try {
+          // 載入報價單資料
+          await fetchQuoteById(id);
           
-          // 載入並填入項目資料
-          try {
+          // 檢查是否成功載入
+          if (currentQuote && currentQuote.id === id) {
+            // 填入表單資料
+            setValue('customer_id', currentQuote.customer_id);
+            setValue('contact_person', currentQuote.contact_person);
+            setValue('quote_date', currentQuote.quote_date);
+            setValue('valid_until', currentQuote.valid_until);
+            setValue('staff_id', currentQuote.staff_id);
+            setValue('bank_id', currentQuote.bank_id);
+            setValue('tax_rate', currentQuote.tax_rate);
+            setValue('notes', currentQuote.notes || '');
+            
+            // 載入並填入項目資料
             const items = await fetchQuoteItems(id);
             if (items && items.length > 0) {
               setValue('items', items.map(item => ({
@@ -163,11 +170,13 @@ export function QuoteForm(): JSX.Element {
                 sort_order: item.sort_order
               })));
             }
-          } catch (error) {
-            console.error('載入報價單項目失敗:', error);
           }
+        } catch (error) {
+          console.error('載入報價單資料失敗:', error);
         }
-      });
+      };
+      
+      loadQuoteData();
     }
     
     return () => {
@@ -175,7 +184,7 @@ export function QuoteForm(): JSX.Element {
         clearCurrentQuote();
       }
     };
-  }, [isEditing, id, fetchCustomers, fetchProducts, fetchStaff, fetchBanks, fetchQuoteById, fetchQuoteItems, currentQuote, setValue, clearCurrentQuote]);
+  }, [isEditing, id]); // 移除會變化的依賴項
 
   /**
    * 計算項目金額

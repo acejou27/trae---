@@ -11,7 +11,8 @@ import {
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  DocumentArrowDownIcon
+  DocumentArrowDownIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 import { useQuoteStore } from '../../stores/useQuoteStore';
 import type { Quote } from '../../types';
@@ -142,6 +143,20 @@ export function QuoteList(): JSX.Element {
     } catch (error) {
       console.error('HTML匯出失敗:', error);
       alert('HTML匯出失敗，請稍後再試');
+    }
+  };
+
+  /**
+   * 處理列印報價單
+   * @param quote - 報價單資料
+   */
+  const handlePrintQuote = async (quote: Quote): Promise<void> => {
+    try {
+      const { printQuote } = await import('../../utils/printUtils');
+      await printQuote(quote);
+    } catch (error) {
+      console.error('列印失敗:', error);
+      alert('列印失敗，請稍後再試');
     }
   };
 
@@ -337,7 +352,6 @@ export function QuoteList(): JSX.Element {
                   
                   {/* 操作按鈕 */}
                   <div className="flex items-center space-x-2 ml-4">
-
                     <Link
                       to={`/quotes/${quote.id}/edit`}
                       className="text-blue-400 hover:text-blue-500"
@@ -345,6 +359,13 @@ export function QuoteList(): JSX.Element {
                     >
                       <PencilIcon className="h-5 w-5" />
                     </Link>
+                    <button
+                      onClick={() => handlePrintQuote(quote)}
+                      className="text-purple-400 hover:text-purple-500"
+                      title="列印"
+                    >
+                      <PrinterIcon className="h-5 w-5" />
+                    </button>
                     <button
                       onClick={() => handleExportQuoteHTML(quote)}
                       className="text-green-400 hover:text-green-500"

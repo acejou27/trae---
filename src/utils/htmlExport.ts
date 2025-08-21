@@ -53,12 +53,29 @@ export async function exportQuoteToHTML(
 }
 
 /**
+ * 獲取公司設定
+ */
+function getCompanySettings() {
+  const settings = localStorage.getItem('companySettings');
+  return settings ? JSON.parse(settings) : {
+    companyName: '您的公司名稱',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    taxId: '',
+    logo: null
+  };
+}
+
+/**
  * 生成報價單HTML內容
  * @param quote - 報價單資料
  * @param includeStyles - 是否包含樣式
  */
 function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
   const styles = includeStyles ? getQuoteStyles() : '';
+  const companySettings = getCompanySettings();
   
   // 計算小計、稅額和總計
   const items = quote.items || [];
@@ -79,8 +96,15 @@ function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
   <div class="quote-container">
     <!-- 公司標題 -->
     <div class="header">
+      ${companySettings.logo ? `<div class="company-logo"><img src="${companySettings.logo}" alt="公司Logo" /></div>` : ''}
       <h1>報價單</h1>
-      <div class="company-name">振禾有限公司</div>
+      <div class="company-name">${companySettings.companyName}</div>
+      ${companySettings.address ? `<div class="company-address">${companySettings.address}</div>` : ''}
+      <div class="company-contact">
+        ${companySettings.phone ? `<span>電話: ${companySettings.phone}</span>` : ''}
+        ${companySettings.email ? `<span>Email: ${companySettings.email}</span>` : ''}
+      </div>
+      ${companySettings.taxId ? `<div class="company-tax-id">統一編號: ${companySettings.taxId}</div>` : ''}
     </div>
     
     <!-- 報價單資訊 -->
@@ -243,10 +267,42 @@ function getQuoteStyles(): string {
       font-weight: bold;
     }
     
+    .company-logo {
+      margin-bottom: 15px;
+    }
+    
+    .company-logo img {
+      max-height: 80px;
+      max-width: 200px;
+      object-fit: contain;
+    }
+    
     .company-name {
       font-size: 1.2em;
+      color: #2c3e50;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    
+    .company-address {
+      font-size: 0.9em;
       color: #7f8c8d;
-      font-weight: 500;
+      margin-bottom: 5px;
+    }
+    
+    .company-contact {
+      font-size: 0.9em;
+      color: #7f8c8d;
+      margin-bottom: 5px;
+    }
+    
+    .company-contact span {
+      margin-right: 15px;
+    }
+    
+    .company-tax-id {
+      font-size: 0.9em;
+      color: #7f8c8d;
     }
     
     .quote-info {

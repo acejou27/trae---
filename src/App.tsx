@@ -15,6 +15,7 @@ import { ProductManagement as ProductList } from './pages/settings/ProductManage
 import { StaffManagement as StaffList } from './pages/settings/StaffManagement';
 import { BankManagement as BankList } from './pages/settings/BankManagement';
 import { Settings } from './pages/settings/Settings';
+import { CompanySettings } from './pages/settings/CompanySettings';
 import './index.css';
 
 /**
@@ -38,6 +39,7 @@ function App(): JSX.Element {
             
             {/* 基礎資料管理路由 */}
             <Route path="/settings" element={<Settings />} />
+            <Route path="/settings/company" element={<CompanySettings />} />
             <Route path="/settings/customers" element={<CustomerList />} />
             <Route path="/settings/products" element={<ProductList />} />
             <Route path="/settings/staff" element={<StaffList />} />
