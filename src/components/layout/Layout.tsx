@@ -3,7 +3,7 @@
  * Created: 2024-12-28
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
@@ -14,9 +14,13 @@ import {
   UsersIcon,
   CubeIcon,
   UserGroupIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  BuildingOfficeIcon,
+  ArrowRightOnRectangleIcon,
+  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { cn } from '../../lib/utils';
+import { useAuth } from '../../hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -52,6 +56,11 @@ const navigation: NavItem[] = [
     icon: CogIcon,
     children: [
       {
+        name: '公司設定',
+        href: '/settings/company',
+        icon: BuildingOfficeIcon
+      },
+      {
         name: '客戶管理',
         href: '/settings/customers',
         icon: UsersIcon
@@ -81,7 +90,27 @@ const navigation: NavItem[] = [
  */
 export function Layout({ children }: LayoutProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, signOut, loading } = useAuth();
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // 點擊外部關閉用戶選單
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [userMenuOpen]);
 
   /**
    * 檢查當前路由是否為活躍狀態
@@ -186,16 +215,72 @@ export function Layout({ children }: LayoutProps): JSX.Element {
 
           {/* 使用者資訊區域 */}
           <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">U</span>
+            <div className="relative" ref={userMenuRef}>
+              <button
+                type="button"
+                className="flex w-full items-center rounded-lg p-2 text-left hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                onClick={() => setUserMenuOpen(!userMenuOpen)}
+              >
+                <div className="flex-shrink-0">
+                  {user?.user_metadata?.avatar_url ? (
+                    <img
+                      className="h-8 w-8 rounded-full"
+                      src={user.user_metadata.avatar_url}
+                      alt="用戶頭像"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                      <span className="text-sm font-medium text-white">
+                        {user?.user_metadata?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">使用者</p>
-                <p className="text-xs text-gray-500">user@example.com</p>
-              </div>
+                <div className="ml-3 flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700 truncate">
+                    {user?.user_metadata?.full_name || '使用者'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {user?.email || 'user@example.com'}
+                  </p>
+                </div>
+              </button>
+              
+              {/* 用戶選單下拉 */}
+              {userMenuOpen && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                  <Link
+                    to="/settings/profile"
+                    className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={() => setUserMenuOpen(false)}
+                  >
+                    <UserCircleIcon className="h-4 w-4 mr-3 text-gray-400" />
+                    個人資料
+                  </Link>
+                  <hr className="my-1 border-gray-200" />
+                  <button
+                    type="button"
+                    className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    onClick={async () => {
+                      setUserMenuOpen(false);
+                      console.log('側邊欄登出按鈕被點擊');
+                      try {
+                        console.log('開始執行登出...');
+                        await signOut();
+                        console.log('登出成功完成');
+                      } catch (error) {
+                        console.error('登出失敗:', error);
+                        // 可以在這裡添加用戶友好的錯誤提示
+                        alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+                      }
+                    }}
+                    disabled={loading}
+                  >
+                    <ArrowRightOnRectangleIcon className="h-4 w-4 mr-3 text-red-500" />
+                    {loading ? '登出中...' : '登出'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -218,6 +303,33 @@ export function Layout({ children }: LayoutProps): JSX.Element {
               <h2 className="text-lg font-semibold text-gray-900">
                 {/* 這裡可以根據當前路由顯示頁面標題 */}
               </h2>
+              
+              {/* 桌面版用戶資訊 */}
+              <div className="hidden lg:flex items-center space-x-3">
+                <span className="text-sm text-gray-600">
+                  歡迎，{user?.user_metadata?.full_name || user?.email?.split('@')[0] || '使用者'}
+                </span>
+                <div className="h-6 w-px bg-gray-300" />
+                <button
+                  type="button"
+                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                  onClick={async () => {
+                    console.log('頂部導航登出按鈕被點擊');
+                    try {
+                      console.log('開始執行登出...');
+                      await signOut();
+                      console.log('登出成功完成');
+                    } catch (error) {
+                      console.error('登出失敗:', error);
+                      // 可以在這裡添加用戶友好的錯誤提示
+                      alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? '登出中...' : '登出'}
+                </button>
+              </div>
             </div>
           </div>
         </header>

@@ -4,17 +4,17 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  DocumentArrowDownIcon
+  DocumentArrowDownIcon,
+  PrinterIcon
 } from '@heroicons/react/24/outline';
 import { useQuoteStore } from '../../stores/useQuoteStore';
-import { exportQuoteToPDF } from '../../utils/pdfExport';
 import type { Quote } from '../../types';
 
 /**
@@ -33,12 +33,13 @@ const statusOptions = [
  * 提供報價單的查看、搜尋、篩選和管理功能
  */
 export function QuoteList(): JSX.Element {
+  const navigate = useNavigate();
   const { 
     quotes, 
     loading, 
-
     fetchQuotes, 
     deleteQuote,
+    updateQuoteStatus,
     fetchCustomers,
     fetchProducts,
     fetchStaff,
@@ -117,19 +118,58 @@ export function QuoteList(): JSX.Element {
   };
 
   /**
-   * 處理匯出所有報價單為PDF
-   * Created: 2024-12-28
+   * 處理狀態修改
+   * @param id - 報價單ID
+   * @param newStatus - 新狀態
    */
-  const handleExportAllPDF = async () => {
-    if (filteredQuotes.length === 0) {
-      alert('沒有報價單可以匯出');
-      return;
-    }
-
+  const handleStatusChange = async (id: string, newStatus: Quote['status']): Promise<void> => {
     try {
-      const { exportQuoteListToPDF } = await import('../../utils/pdfExport');
-      await exportQuoteListToPDF(filteredQuotes);
-      alert('報價單列表PDF匯出成功！');
+      await updateQuoteStatus(id, newStatus);
+    } catch (error) {
+      console.error('狀態修改失敗:', error);
+      alert('狀態修改失敗，請稍後再試');
+    }
+  };
+
+  /**
+   * 處理匯出報價單為HTML
+   * @param quote - 報價單資料
+   */
+  const handleExportQuoteHTML = async (quote: Quote): Promise<void> => {
+    try {
+      const { exportQuoteToHTML } = await import('../../utils/htmlExport');
+      await exportQuoteToHTML(quote);
+      alert('HTML匯出成功！');
+    } catch (error) {
+      console.error('HTML匯出失敗:', error);
+      alert('HTML匯出失敗，請稍後再試');
+    }
+  };
+
+  /**
+   * 處理列印報價單
+   * @param quote - 報價單資料
+   */
+  const handlePrintQuote = async (quote: Quote): Promise<void> => {
+    try {
+      const { printQuote } = await import('../../utils/printUtils');
+      await printQuote(quote);
+    } catch (error) {
+      console.error('列印失敗:', error);
+      alert('列印失敗，請稍後再試');
+    }
+  };
+
+
+  /**
+   * 處理匯出單個報價單為PDF
+   * @param quote - 要匯出的報價單
+   */
+  const handleExportQuotePDF = async (quote: Quote) => {
+    try {
+      const { exportQuoteDirectToPDF } = await import('../../utils/pdfExport');
+      await exportQuoteDirectToPDF(quote);
+      alert('報價單PDF匯出成功！');
     } catch (error) {
       console.error('PDF匯出失敗:', error);
       alert('PDF匯出失敗，請稍後再試');
@@ -184,14 +224,6 @@ export function QuoteList(): JSX.Element {
           </p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={handleExportAllPDF}
-            disabled={filteredQuotes.length === 0}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <DocumentArrowDownIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            匯出PDF
-          </button>
           <Link
             to="/quotes/new"
             className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
@@ -280,17 +312,32 @@ export function QuoteList(): JSX.Element {
         ) : filteredQuotes.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {filteredQuotes.map((quote) => (
-              <li key={quote.id} className="px-6 py-4">
+              <li 
+                key={quote.id} 
+                className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                onClick={() => navigate(`/quotes/${quote.id}`)}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-4 flex-1">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {quote.quote_number}
                         </p>
-                        <span className={getStatusBadge(quote.status)}>
-                          {getStatusText(quote.status)}
-                        </span>
+                        <select
+                          value={quote.status}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleStatusChange(quote.id, e.target.value as Quote['status']);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className={`${getStatusBadge(quote.status)} border-0 bg-transparent cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+                        >
+                          <option value="draft">草稿</option>
+                          <option value="sent">已發送</option>
+                          <option value="accepted">已接受</option>
+                          <option value="rejected">已拒絕</option>
+                        </select>
                       </div>
                       <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
                         <span>{quote.customer?.company_name || '未知客戶'}</span>
@@ -311,14 +358,7 @@ export function QuoteList(): JSX.Element {
                   </div>
                   
                   {/* 操作按鈕 */}
-                  <div className="flex items-center space-x-2 ml-4">
-                    <Link
-                      to={`/quotes/${quote.id}`}
-                      className="text-gray-400 hover:text-gray-500"
-                      title="查看"
-                    >
-                      <EyeIcon className="h-5 w-5" />
-                    </Link>
+                  <div className="flex items-center space-x-2 ml-4" onClick={(e) => e.stopPropagation()}>
                     <Link
                       to={`/quotes/${quote.id}/edit`}
                       className="text-blue-400 hover:text-blue-500"
@@ -327,9 +367,16 @@ export function QuoteList(): JSX.Element {
                       <PencilIcon className="h-5 w-5" />
                     </Link>
                     <button
-                      onClick={() => exportQuoteToPDF('quote-view', quote)}
+                      onClick={() => handlePrintQuote(quote)}
+                      className="text-purple-400 hover:text-purple-500"
+                      title="列印"
+                    >
+                      <PrinterIcon className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleExportQuoteHTML(quote)}
                       className="text-green-400 hover:text-green-500"
-                      title="匯出PDF"
+                      title="匯出HTML"
                     >
                       <DocumentArrowDownIcon className="h-5 w-5" />
                     </button>

@@ -4,7 +4,6 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
 import {
   UsersIcon,
   CubeIcon,
@@ -15,61 +14,13 @@ import {
 import { useQuoteStore } from '../../stores/useQuoteStore';
 
 /**
- * 設定項目介面
- */
-interface SettingItem {
-  title: string;
-  description: string;
-  href: string;
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  color: string;
-  count?: number;
-}
-
-/**
  * 基礎資料設定頁面組件
  * 提供各種基礎資料管理的入口和概覽
  */
 export function Settings(): JSX.Element {
   const { customers, products, staff, banks } = useQuoteStore();
 
-  /**
-   * 設定項目配置
-   */
-  const settingItems: SettingItem[] = [
-    {
-      title: '客戶管理',
-      description: '管理客戶資料，包括公司名稱、聯絡人、電話、地址等資訊',
-      href: '/settings/customers',
-      icon: UsersIcon,
-      color: 'bg-blue-500',
-      count: customers.length
-    },
-    {
-      title: '產品管理',
-      description: '管理產品資料，包括產品名稱、說明、預設價格、單位等資訊',
-      href: '/settings/products',
-      icon: CubeIcon,
-      color: 'bg-green-500',
-      count: products.length
-    },
-    {
-      title: '負責人管理',
-      description: '管理專案負責人資料，包括姓名、職稱、聯絡方式等資訊',
-      href: '/settings/staff',
-      icon: UserGroupIcon,
-      color: 'bg-purple-500',
-      count: staff.length
-    },
-    {
-      title: '銀行資料',
-      description: '管理銀行帳戶資料，用於報價單的匯款資訊顯示',
-      href: '/settings/banks',
-      icon: BanknotesIcon,
-      color: 'bg-orange-500',
-      count: banks.length
-    }
-  ];
+
 
   /**
    * 系統統計資料
@@ -107,7 +58,7 @@ export function Settings(): JSX.Element {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">基礎資料設定</h1>
         <p className="mt-1 text-sm text-gray-500">
-          管理系統的基礎資料，包括客戶、產品、負責人和銀行資料
+          管理系統的基礎資料，包括公司設定、客戶、產品、負責人和銀行資料。所有管理項目已顯示在左側導航欄中，可直接點擊進入。
         </p>
       </div>
 
@@ -142,48 +93,7 @@ export function Settings(): JSX.Element {
         ))}
       </div>
 
-      {/* 設定項目 */}
-      <div>
-        <h2 className="text-lg font-medium text-gray-900 mb-4">管理項目</h2>
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {settingItems.map((item, index) => (
-            <Link
-              key={index}
-              to={item.href}
-              className="group relative bg-white p-6 rounded-lg shadow hover:shadow-md transition-shadow duration-200"
-            >
-              <div>
-                <span className={`rounded-lg inline-flex p-3 ${item.color} text-white`}>
-                  <item.icon className="h-6 w-6" aria-hidden="true" />
-                </span>
-              </div>
-              <div className="mt-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-medium text-gray-900 group-hover:text-blue-600">
-                    {item.title}
-                  </h3>
-                  {item.count !== undefined && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                      {item.count} 筆
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  {item.description}
-                </p>
-              </div>
-              <span
-                className="pointer-events-none absolute top-6 right-6 text-gray-300 group-hover:text-gray-400"
-                aria-hidden="true"
-              >
-                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="m11.293 17.293 1.414 1.414L19.414 12l-6.707-6.707-1.414 1.414L15.586 11H6v2h9.586l-4.293 4.293z" />
-                </svg>
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
+
 
       {/* 系統資訊 */}
       <div className="bg-white shadow rounded-lg p-6">

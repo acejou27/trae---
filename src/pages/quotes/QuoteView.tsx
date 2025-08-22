@@ -15,6 +15,12 @@ import {
 import { useQuoteStore } from '../../stores/useQuoteStore';
 import type { Quote } from '../../types';
 
+// 公司設定介面
+interface CompanySettings {
+  companyName: string;
+  logo: string;
+}
+
 /**
  * 報價單查看組件
  * 提供報價單的詳細查看、列印和匯出功能
@@ -24,13 +30,20 @@ export function QuoteView(): JSX.Element {
   const navigate = useNavigate();
   const { 
     quotes, 
+    currentQuote,
     loading,
+    error,
     fetchQuotes,
+    fetchQuoteById,
     fetchQuoteItems,
     setCurrentQuote,
     clearCurrentQuote
   } = useQuoteStore();
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [companySettings, setCompanySettings] = useState<CompanySettings>({
+    companyName: '您的公司名稱',
+    logo: ''
+  });
 
   /**
    * 載入報價單資料
@@ -38,31 +51,64 @@ export function QuoteView(): JSX.Element {
   useEffect(() => {
     const loadQuote = async () => {
       if (id) {
-        // 先從 store 中尋找報價單
-        let foundQuote = quotes.find(q => q.id === id);
-        
-        if (!foundQuote) {
-          // 如果 store 中沒有，從 API 載入
-          await fetchQuotes();
-          foundQuote = quotes.find(q => q.id === id);
-        }
-        
-        if (foundQuote) {
+        try {
+          // 直接使用 fetchQuoteById 載入特定報價單
+          await fetchQuoteById(id);
+          
           // 載入報價單項目
-          await fetchQuoteItems(id);
-          setQuote(foundQuote);
-          setCurrentQuote(foundQuote);
+          const items = await fetchQuoteItems(id);
+          console.log('載入的報價單項目:', items);
+        } catch (error) {
+          console.error('載入報價單失敗:', error);
+          setQuote(null);
         }
       }
     };
     
     loadQuote();
     
+    // 載入公司設定
+    const savedSettings = localStorage.getItem('companySettings');
+    if (savedSettings) {
+      try {
+        const settings = JSON.parse(savedSettings);
+        setCompanySettings(prev => ({
+          ...prev,
+          ...settings,
+          // 確保logo有預設值
+          logo: settings.logo || ''
+        }));
+      } catch (error) {
+        console.error('載入公司設定失敗:', error);
+      }
+    }
+    
     // 清理函數
     return () => {
       clearCurrentQuote();
     };
-  }, [id, quotes, fetchQuotes, fetchQuoteItems, setCurrentQuote, clearCurrentQuote]);
+  }, [id]); // 只依賴 id，避免無限循環
+  
+  // 監聽 currentQuote 的變化
+  useEffect(() => {
+    if (currentQuote && currentQuote.id === id) {
+      // 載入報價單項目並合併到quote中
+      const loadQuoteWithItems = async () => {
+        try {
+          const items = await fetchQuoteItems(id);
+          setQuote({
+            ...currentQuote,
+            items: items || []
+          });
+        } catch (error) {
+          console.error('載入報價單項目失敗:', error);
+          setQuote(currentQuote);
+        }
+      };
+      
+      loadQuoteWithItems();
+    }
+  }, [currentQuote, id]);
 
   /**
    * 處理列印
@@ -72,33 +118,33 @@ export function QuoteView(): JSX.Element {
   };
 
   /**
-   * 處理PDF匯出
+   * 處理HTML匯出
    */
-  const handleExportPDF = async (): Promise<void> => {
+  const handleExportHTML = async (): Promise<void> => {
     if (!quote) return;
     
     try {
-      const { exportQuoteToPDF } = await import('../../utils/pdfExport');
-      await exportQuoteToPDF('quote-preview', quote);
-      alert('PDF匯出成功！');
+      const { exportQuoteToHTML } = await import('../../utils/htmlExport');
+      await exportQuoteToHTML(quote);
+      alert('HTML匯出成功！');
     } catch (error) {
-      console.error('PDF匯出失敗:', error);
-      alert('PDF匯出失敗，請稍後再試');
+      console.error('HTML匯出失敗:', error);
+      alert('HTML匯出失敗，請稍後再試');
     }
   };
 
   /**
-   * 處理分享
+   * 處理分享/預覽
    */
   const handleShare = async (): Promise<void> => {
     if (!quote) return;
     
     try {
-      const { previewQuotePDF } = await import('../../utils/pdfExport');
-      await previewQuotePDF('quote-preview');
+      const { previewQuoteHTML } = await import('../../utils/htmlExport');
+      previewQuoteHTML(quote);
     } catch (error) {
-      console.error('PDF預覽失敗:', error);
-      alert('PDF預覽失敗，請稍後再試');
+      console.error('HTML預覽失敗:', error);
+      alert('HTML預覽失敗，請稍後再試');
     }
   };
 
@@ -149,6 +195,11 @@ export function QuoteView(): JSX.Element {
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900">找不到報價單</h3>
         <p className="mt-1 text-sm text-gray-500">請檢查報價單編號是否正確</p>
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 rounded-md">
+            <p className="text-sm text-red-600">錯誤: {error}</p>
+          </div>
+        )}
         <div className="mt-6">
           <Link
             to="/quotes"
@@ -160,6 +211,11 @@ export function QuoteView(): JSX.Element {
       </div>
     );
   }
+
+  // 調試信息
+  console.log('當前報價單:', quote);
+  console.log('報價單項目:', quote.items);
+  console.log('公司設定:', companySettings);
 
   return (
     <div className="space-y-6">
@@ -203,11 +259,11 @@ export function QuoteView(): JSX.Element {
             列印
           </button>
           <button
-            onClick={handleExportPDF}
+            onClick={handleExportHTML}
             className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
           >
             <DocumentArrowDownIcon className="-ml-0.5 mr-2 h-4 w-4" />
-            匯出PDF
+            匯出HTML
           </button>
           <Link
             to={`/quotes/${quote.id}/edit`}
@@ -224,11 +280,30 @@ export function QuoteView(): JSX.Element {
         <div className="px-6 py-8">
           {/* 公司標題 */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
-            <div className="mt-2 text-lg text-gray-600">
-              {/* TODO: 從設定中取得公司名稱 */}
-              您的公司名稱
+            {/* 公司Logo */}
+            <div className="flex justify-center mb-4">
+              {companySettings.logo ? (
+                <img 
+                  src={companySettings.logo} 
+                  alt="公司Logo" 
+                  className="w-30 h-30 object-contain"
+                  style={{ width: '120px', height: '120px' }}
+                  onError={(e) => {
+                    console.error('圖片載入失敗:', companySettings.logo);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div 
+                  className="w-30 h-30 bg-gray-200 rounded-lg flex items-center justify-center"
+                  style={{ width: '120px', height: '120px' }}
+                >
+                  <span className="text-gray-500 text-sm">公司Logo</span>
+                </div>
+              )}
             </div>
+            <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
+            <h3 className="text-xl text-gray-600 mt-2">{companySettings.companyName}</h3>
           </div>
 
           {/* 基本資訊 */}
@@ -325,28 +400,36 @@ export function QuoteView(): JSX.Element {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {quote.items?.map((item, index) => (
-                    <tr key={item.id || index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.product_name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {item.description || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {item.quantity.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.unit}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        NT$ {item.unit_price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        NT$ {item.amount.toLocaleString()}
+                  {quote.items && quote.items.length > 0 ? (
+                    quote.items.map((item, index) => (
+                      <tr key={item.id || index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.product_name || '未知項目'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {item.description || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {(item.quantity || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.unit || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          NT$ {(item.unit_price || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          NT$ {(item.amount || (item.quantity || 0) * (item.unit_price || 0)).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                        暫無報價項目
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -356,18 +439,35 @@ export function QuoteView(): JSX.Element {
           <div className="flex justify-end mb-8">
             <div className="w-64">
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">小計:</span>
-                  <span className="text-sm font-medium">NT$ {quote.subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">稅額 ({quote.tax_rate}%):</span>
-                  <span className="text-sm font-medium">NT$ {quote.tax_amount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-base font-medium text-gray-900">總計:</span>
-                  <span className="text-base font-bold text-gray-900">NT$ {quote.total.toLocaleString()}</span>
-                </div>
+                {(() => {
+                  // 計算小計、稅額和總計
+                  const items = quote.items || [];
+                  const subtotal = items.reduce((sum, item) => {
+                    const quantity = item.quantity || 0;
+                    const unitPrice = item.unit_price || 0;
+                    return sum + (quantity * unitPrice);
+                  }, 0);
+                  const taxRate = quote.tax_rate || 5; // 預設稅率 5%
+                  const taxAmount = subtotal * (taxRate / 100);
+                  const total = subtotal + taxAmount;
+                  
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">小計:</span>
+                        <span className="text-sm font-medium">NT$ {subtotal.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">稅額 ({taxRate}%):</span>
+                        <span className="text-sm font-medium">NT$ {taxAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-base font-medium text-gray-900">總計:</span>
+                        <span className="text-base font-bold text-gray-900">NT$ {total.toLocaleString()}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -415,10 +515,52 @@ export function QuoteView(): JSX.Element {
           <div className="text-center text-sm text-gray-500 border-t pt-6">
             <p>感謝您的詢價，如有任何問題請隨時與我們聯繫</p>
             {quote.staff?.phone && (
-              <p className="mt-1">聯絡電話: {quote.staff.phone}</p>
+              <p className="mt-1">
+                聯絡電話: 
+                <a 
+                  href={`tel:${quote.staff.phone}`}
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                >
+                  {quote.staff.phone}
+                </a>
+              </p>
             )}
             {quote.staff?.email && (
-              <p className="mt-1">電子郵件: {quote.staff.email}</p>
+              <>
+                <p className="mt-1">
+                  電子郵件: 
+                  <a 
+                    href={`mailto:${quote.staff.email}`}
+                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                  >
+                    {quote.staff.email}
+                  </a>
+                </p>
+                <p className="mt-2 text-sm text-gray-600">
+                  技術提供：
+                  <a 
+                    href="https://zhenhe-dm.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                  >
+                    振禾有限公司
+                  </a>
+                </p>
+              </>
+            )}
+            {!quote.staff?.email && (
+              <p className="mt-2 text-sm text-gray-600">
+                技術提供：
+                <a 
+                  href="https://zhenhe-dm.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 hover:underline transition-colors duration-200"
+                >
+                  振禾有限公司
+                </a>
+              </p>
             )}
           </div>
         </div>

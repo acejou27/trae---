@@ -588,7 +588,7 @@ export const useQuoteStore = create<QuoteState>()(devtools(
             product:products(*)
           `)
           .eq('quote_id', quoteId)
-          .order('created_at', { ascending: true });
+          .order('sort_order', { ascending: true });
         
         if (error) throw error;
         return data || [];

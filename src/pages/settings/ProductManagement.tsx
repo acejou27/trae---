@@ -274,7 +274,11 @@ export function ProductManagement(): JSX.Element {
         ) : (
           <ul className="divide-y divide-gray-200">
             {filteredProducts.map((product) => (
-              <li key={product.id} className="px-6 py-4">
+              <li 
+                key={product.id} 
+                className="px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors duration-200"
+                onClick={() => handleEditProduct(product)}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
@@ -306,7 +310,7 @@ export function ProductManagement(): JSX.Element {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => handleEditProduct(product)}
