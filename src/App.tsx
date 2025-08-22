@@ -17,10 +17,9 @@ import { StaffManagement as StaffList } from './pages/settings/StaffManagement';
 import { BankManagement as BankList } from './pages/settings/BankManagement';
 import { Settings } from './pages/settings/Settings';
 import { CompanySettings } from './pages/settings/CompanySettings';
+import UserProfile from './pages/settings/UserProfile';
 import Login from './pages/auth/Login';
-import Register from './pages/auth/Register';
 import AuthCallback from './pages/auth/AuthCallback';
-import ForgotPassword from './pages/auth/ForgotPassword';
 import './index.css';
 
 /**
@@ -34,9 +33,7 @@ function App(): JSX.Element {
         <Routes>
           {/* 認證相關路由（不需要Layout） */}
           <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           
           {/* 受保護的應用程式路由 */}
           <Route path="/*" element={
@@ -59,6 +56,7 @@ function App(): JSX.Element {
                   <Route path="/settings/products" element={<ProductList />} />
                   <Route path="/settings/staff" element={<StaffList />} />
                   <Route path="/settings/banks" element={<BankList />} />
+                  <Route path="/settings/profile" element={<UserProfile />} />
                   
                   {/* 404 重導向 */}
                   <Route path="*" element={<Navigate to="/" replace />} />

@@ -249,17 +249,14 @@ export function Layout({ children }: LayoutProps): JSX.Element {
               {/* 用戶選單下拉 */}
               {userMenuOpen && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <button
-                    type="button"
+                  <Link
+                    to="/settings/profile"
                     className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                    onClick={() => {
-                      setUserMenuOpen(false);
-                      // 這裡可以添加個人資料頁面導航
-                    }}
+                    onClick={() => setUserMenuOpen(false)}
                   >
                     <UserCircleIcon className="h-4 w-4 mr-3 text-gray-400" />
                     個人資料
-                  </button>
+                  </Link>
                   <hr className="my-1 border-gray-200" />
                   <button
                     type="button"

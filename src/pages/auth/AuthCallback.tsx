@@ -1,6 +1,6 @@
 /**
  * 認證回調處理頁面
- * 處理Google OAuth登錄和郵件確認後的重定向和會話設置
+ * 處理Google OAuth登錄後的重定向和會話設置
  * Created: 2024-12-28
  */
 
@@ -21,12 +21,19 @@ const AuthCallback: React.FC = () => {
         // 檢查是否有錯誤參數
         const error = searchParams.get('error');
         const errorDescription = searchParams.get('error_description');
-        const type = searchParams.get('type'); // 確認類型：signup, recovery等
         
         if (error) {
-          console.error('認證錯誤:', error, errorDescription);
+          console.error('Google OAuth 錯誤:', error, errorDescription);
           setStatus('error');
-          setMessage(errorDescription || '認證過程中發生錯誤');
+          
+          // 根據錯誤類型提供更友好的錯誤訊息
+          if (error === 'access_denied') {
+            setMessage('您取消了 Google 登錄授權');
+          } else if (error === 'invalid_request') {
+            setMessage('登錄請求無效，請重試');
+          } else {
+            setMessage(errorDescription || 'Google 登錄過程中發生錯誤');
+          }
           
           // 3秒後重定向到登錄頁面
           setTimeout(() => {
@@ -52,42 +59,24 @@ const AuthCallback: React.FC = () => {
 
         if (data.session) {
           const user = data.session.user;
-          console.log('認證成功:', user.email, '類型:', type);
+          console.log('Google 登錄成功:', user.email);
           
-          // 根據認證類型顯示不同訊息
-          if (type === 'signup') {
-            setStatus('success');
-            setMessage('郵件確認成功！正在跳轉到首頁...');
-          } else {
-            setStatus('success');
-            setMessage('登錄成功，正在跳轉...');
-          }
+          setStatus('success');
+          setMessage(`歡迎 ${user.email}！正在跳轉到首頁...`);
           
           // 1.5秒後重定向到首頁
           setTimeout(() => {
             navigate('/', { replace: true });
           }, 1500);
         } else {
-          // 沒有會話，可能需要處理郵件確認但未自動登錄的情況
-          console.log('沒有找到有效會話，可能是郵件確認但需要手動登錄');
+          console.log('沒有找到有效會話');
+          setStatus('error');
+          setMessage('Google 登錄會話無效，請重新登錄');
           
-          if (type === 'signup') {
-            setStatus('success');
-            setMessage('郵件確認成功！請使用您的帳號密碼登錄。');
-            
-            // 3秒後重定向到登錄頁面
-            setTimeout(() => {
-              navigate('/auth/login', { replace: true });
-            }, 3000);
-          } else {
-            setStatus('error');
-            setMessage('認證會話無效，請重新登錄');
-            
-            // 3秒後重定向到登錄頁面
-            setTimeout(() => {
-              navigate('/auth/login', { replace: true });
-            }, 3000);
-          }
+          // 3秒後重定向到登錄頁面
+          setTimeout(() => {
+            navigate('/auth/login', { replace: true });
+          }, 3000);
         }
       } catch (error) {
         console.error('處理認證回調時發生錯誤:', error);
@@ -111,10 +100,10 @@ const AuthCallback: React.FC = () => {
           <>
             <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              正在處理認證...
+              正在處理 Google 登錄...
             </h2>
             <p className="text-gray-600">
-              請稍候，我們正在完成您的認證流程
+              請稍候，我們正在完成您的登錄流程
             </p>
           </>
         );
@@ -124,7 +113,7 @@ const AuthCallback: React.FC = () => {
           <>
             <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              認證成功！
+              登錄成功！
             </h2>
             <p className="text-gray-600">
               {message}
@@ -137,17 +126,22 @@ const AuthCallback: React.FC = () => {
           <>
             <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              認證失敗
+              登錄失敗
             </h2>
             <p className="text-gray-600 mb-4">
               {message}
             </p>
-            <button
-              onClick={() => navigate('/auth/login', { replace: true })}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-            >
-              返回登錄頁面
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => navigate('/auth/login', { replace: true })}
+                className="w-full inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              >
+                重新登錄
+              </button>
+              <p className="text-xs text-gray-500">
+                如果問題持續發生，請聯繫系統管理員
+              </p>
+            </div>
           </>
         );
       

@@ -1,0 +1,198 @@
+{
+  "event_message": "POST | 200 | 211.23.203.91 | 972e84be0ee6f228 | https://rbywkdelamswevxbelty.supabase.co/auth/v1/signup?redirect_to=http%3A%2F%2Flocalhost%3A5173%2Fauth%2Fcallback | Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+  "id": "fe221712-cb44-4654-8ab6-03557ddff065",
+  "metadata": [
+    {
+      "load_balancer_experimental_routing": null,
+      "load_balancer_geo_aware_info": [],
+      "load_balancer_redirect_identifier": null,
+      "logflare_worker": [
+        {
+          "worker_id": "DVQBRG"
+        }
+      ],
+      "request": [
+        {
+          "cf": [
+            {
+              "asOrganization": "Chunghwa Telecom Co.,Ltd.",
+              "asn": 3462,
+              "botManagement": [
+                {
+                  "corporateProxy": false,
+                  "detectionIds": [],
+                  "ja3Hash": "431896ff180917dee7fbd4acdeceba13",
+                  "ja4": "t13d1517h2_8daaf6152771_b0da82dd1658",
+                  "ja4Signals": [
+                    {
+                      "browser_ratio_1h": 0.36995795369148,
+                      "cache_ratio_1h": 0.2993306517601,
+                      "h2h3_ratio_1h": 0.99271857738495,
+                      "heuristic_ratio_1h": 0.005599423777312,
+                      "ips_quantile_1h": 0.99984049797058,
+                      "ips_rank_1h": 20,
+                      "paths_rank_1h": 21,
+                      "reqs_quantile_1h": 0.99982452392578,
+                      "reqs_rank_1h": 22,
+                      "uas_rank_1h": 22
+                    }
+                  ],
+                  "jsDetection": [
+                    {
+                      "passed": false
+                    }
+                  ],
+                  "score": 82,
+                  "staticResource": false,
+                  "verifiedBot": false
+                }
+              ],
+              "city": "Taoyuan City",
+              "clientAcceptEncoding": "gzip, deflate, br",
+              "clientTcpRtt": 11,
+              "clientTrustScore": 82,
+              "colo": "KHH",
+              "continent": "AS",
+              "country": "TW",
+              "edgeRequestKeepAliveStatus": 1,
+              "httpProtocol": "HTTP/2",
+              "isEUCountry": null,
+              "latitude": "24.99368",
+              "longitude": "121.29696",
+              "metroCode": null,
+              "postalCode": null,
+              "region": "Taiwan",
+              "regionCode": "04",
+              "requestPriority": "weight=220;exclusive=1",
+              "timezone": "Asia/Taipei",
+              "tlsCipher": "AEAD-AES128-GCM-SHA256",
+              "tlsClientAuth": [
+                {
+                  "certPresented": "0",
+                  "certRevoked": "0",
+                  "certVerified": "NONE"
+                }
+              ],
+              "tlsClientCiphersSha1": "TkWWX+BVdX+teLUyccOBfetwATE=",
+              "tlsClientExtensionsSha1": "4fgLG1guywIesl68lG5Jx+7NUqI=",
+              "tlsClientExtensionsSha1Le": "x7kn8o3GDOuRJCqegtWFH8z3tPE=",
+              "tlsClientHelloLength": "2068",
+              "tlsClientRandom": "nM//OQqJmarWcM4tsH8jM1yiwVI5qR8jMjfeIrnGZ88=",
+              "tlsExportedAuthenticator": [
+                {
+                  "clientFinished": "f77979837cada90a6a6544ef8b2dca053dfd1bb34c98c695df4c915bca0b5f9e",
+                  "clientHandshake": "1eb32f687975c9bbbead7131a35067d0ab9284094f40856cb14030ac2be8e32d",
+                  "serverFinished": "ff51ea675e2cc7c8f1aa459e8690661321de6acc361bc0c7366be9e8478c7cdc",
+                  "serverHandshake": "b7a9c8af81bad6cef034c1972d3a92f2a05dcd152916a096d335d56930645e97"
+                }
+              ],
+              "tlsVersion": "TLSv1.3",
+              "verifiedBotCategory": null
+            }
+          ],
+          "headers": [
+            {
+              "accept": "*/*",
+              "cf_cache_status": null,
+              "cf_connecting_ip": "211.23.203.91",
+              "cf_ipcountry": "TW",
+              "cf_ray": "972e84be0ee6f228",
+              "content_length": "173",
+              "content_location": null,
+              "content_range": null,
+              "content_type": "application/json;charset=UTF-8",
+              "date": null,
+              "host": "rbywkdelamswevxbelty.supabase.co",
+              "prefer": null,
+              "range": null,
+              "referer": "http://localhost:5173/",
+              "sb_gateway_mode": null,
+              "sb_gateway_version": null,
+              "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Trae/1.100.3 Chrome/132.0.6834.210 Electron/34.5.1 Safari/537.36",
+              "x_client_info": "quote-system@1.0.0",
+              "x_forwarded_host": null,
+              "x_forwarded_proto": "https",
+              "x_forwarded_user_agent": null,
+              "x_kong_proxy_latency": null,
+              "x_kong_upstream_latency": null,
+              "x_real_ip": "211.23.203.91"
+            }
+          ],
+          "host": "rbywkdelamswevxbelty.supabase.co",
+          "method": "POST",
+          "path": "/auth/v1/signup",
+          "port": null,
+          "protocol": "https:",
+          "sb": [
+            {
+              "apikey": [],
+              "auth_user": null,
+              "jwt": [
+                {
+                  "apikey": [
+                    {
+                      "invalid": null,
+                      "payload": [
+                        {
+                          "algorithm": "HS256",
+                          "expires_at": 2058066014,
+                          "issuer": "supabase",
+                          "role": "anon",
+                          "signature_prefix": "j_AitA",
+                          "subject": null
+                        }
+                      ]
+                    }
+                  ],
+                  "authorization": [
+                    {
+                      "invalid": null,
+                      "payload": [
+                        {
+                          "algorithm": "HS256",
+                          "expires_at": 2058066014,
+                          "issuer": "supabase",
+                          "key_id": null,
+                          "role": "anon",
+                          "session_id": null,
+                          "signature_prefix": "j_AitA",
+                          "subject": null
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "search": "?redirect_to=http%3A%2F%2Flocalhost%3A5173%2Fauth%2Fcallback",
+          "url": "https://rbywkdelamswevxbelty.supabase.co/auth/v1/signup?redirect_to=http%3A%2F%2Flocalhost%3A5173%2Fauth%2Fcallback"
+        }
+      ],
+      "response": [
+        {
+          "headers": [
+            {
+              "cf_cache_status": "DYNAMIC",
+              "cf_ray": "972e84bfb461f228-KHH",
+              "content_length": null,
+              "content_location": null,
+              "content_range": null,
+              "content_type": "application/json",
+              "date": "Fri, 22 Aug 2025 01:15:21 GMT",
+              "sb_gateway_mode": null,
+              "sb_gateway_version": "1",
+              "transfer_encoding": "chunked",
+              "x_kong_proxy_latency": null,
+              "x_kong_upstream_latency": null,
+              "x_sb_error_code": null
+            }
+          ],
+          "origin_time": 393,
+          "status_code": 200
+        }
+      ]
+    }
+  ],
+  "timestamp": 1755825320654000
+}

@@ -1,6 +1,6 @@
 /**
  * 用戶認證 Hook
- * 管理用戶登錄、註冊、登出和認證狀態
+ * 管理Google登錄、登出和認證狀態
  * Created: 2024-12-28
  */
 
@@ -16,12 +16,8 @@ export interface AuthState {
 }
 
 export interface AuthActions {
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, metadata?: Record<string, any>) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
-  resendConfirmation: (email: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -64,88 +60,7 @@ export const useAuth = (): UseAuthReturn => {
     });
   }, []);
 
-  // 電子郵件登錄
-  const signIn = useCallback(async (email: string, password: string) => {
-    try {
-      setLoading(true);
-      clearError();
 
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password
-      });
-
-      if (error) {
-        // 特別處理郵件未驗證的情況
-        if (error.message === 'Email not confirmed') {
-          setError('請先驗證您的電子郵件地址。請檢查您的信箱並點擊驗證連結。');
-        }
-        throw error;
-      }
-
-      console.log('登錄成功:', data.user?.email);
-      updateAuthState(data.session);
-    } catch (error) {
-      const errorMessage = handleSupabaseError(error as AuthError);
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
-    }
-  }, [setLoading, clearError, updateAuthState, setError]);
-
-  // 電子郵件註冊
-  const signUp = useCallback(async (
-    email: string, 
-    password: string, 
-    metadata?: Record<string, any>
-  ) => {
-    try {
-      setLoading(true);
-      clearError();
-
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: metadata || {},
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (error) {
-        console.error('註冊錯誤:', error);
-        throw error;
-      }
-
-      console.log('註冊結果:', data);
-
-      // 檢查註冊結果
-      if (data.user) {
-        if (data.user.email_confirmed_at) {
-          // 郵件已確認，直接登錄
-          console.log('郵件已確認，用戶可直接登錄');
-          if (data.session) {
-            updateAuthState(data.session);
-          } else {
-            setLoading(false);
-          }
-        } else {
-          // 需要郵件確認
-          console.log('用戶需要郵件驗證:', data.user.email);
-          setLoading(false);
-          // 不拋出錯誤，讓註冊頁面顯示成功訊息
-        }
-      } else {
-        console.error('註冊失敗：未創建用戶');
-        throw new Error('註冊失敗，請重試');
-      }
-    } catch (error) {
-      const errorMessage = handleSupabaseError(error as AuthError);
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
-    }
-  }, [setLoading, clearError, updateAuthState, setError]);
 
   // Google 登錄
   const signInWithGoogle = useCallback(async () => {
@@ -153,10 +68,30 @@ export const useAuth = (): UseAuthReturn => {
       setLoading(true);
       clearError();
 
-      // 獲取當前域名，確保重定向URL正確
-      const currentOrigin = window.location.origin;
-      const redirectUrl = `${currentOrigin}/auth/callback`;
+      // 獲取重定向URL，優先使用環境變數，否則使用當前域名
+      const getRedirectUrl = () => {
+        // 檢查是否有環境變數設定的基礎URL
+        const baseUrl = import.meta.env.VITE_APP_URL;
+        if (baseUrl) {
+          return `${baseUrl}/auth/callback`;
+        }
+        
+        // 使用當前域名
+        const currentOrigin = window.location.origin;
+        
+        // 如果是localhost但不是開發模式，可能是部署錯誤
+        if (currentOrigin.includes('localhost') && import.meta.env.PROD) {
+          console.warn('生產環境檢測到localhost，這可能是配置錯誤');
+        }
+        
+        return `${currentOrigin}/auth/callback`;
+      };
       
+      const redirectUrl = getRedirectUrl();
+      
+      console.log('環境模式:', import.meta.env.MODE);
+      console.log('是否為生產環境:', import.meta.env.PROD);
+      console.log('當前域名:', window.location.origin);
       console.log('Google OAuth 重定向URL:', redirectUrl);
 
       const { error } = await supabase.auth.signInWithOAuth({
@@ -216,58 +151,7 @@ export const useAuth = (): UseAuthReturn => {
     }
   }, [setLoading, clearError, updateAuthState, setError]);
 
-  // 重置密碼
-  const resetPassword = useCallback(async (email: string) => {
-    try {
-      setLoading(true);
-      clearError();
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${window.location.origin}/auth/reset-password`
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      setLoading(false);
-      console.log('密碼重置郵件已發送');
-    } catch (error) {
-      const errorMessage = handleSupabaseError(error as AuthError);
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
-    }
-  }, [setLoading, clearError, setError]);
-
-  // 重新發送確認郵件
-  const resendConfirmation = useCallback(async (email: string) => {
-    try {
-      setLoading(true);
-      clearError();
-
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email.trim(),
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (error) {
-        console.error('重新發送確認郵件失敗:', error);
-        throw error;
-      }
-
-      setLoading(false);
-      console.log('確認郵件已重新發送');
-    } catch (error) {
-      const errorMessage = handleSupabaseError(error as AuthError);
-      setError(errorMessage);
-      setLoading(false);
-      throw new Error(errorMessage);
-    }
-  }, [setLoading, clearError, setError]);
 
   // 監聽認證狀態變化
   useEffect(() => {
@@ -331,12 +215,8 @@ export const useAuth = (): UseAuthReturn => {
 
   return {
     ...state,
-    signIn,
-    signUp,
     signInWithGoogle,
     signOut,
-    resetPassword,
-    resendConfirmation,
     clearError
   };
 };
