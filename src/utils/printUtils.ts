@@ -341,7 +341,7 @@ function generatePrintHTML(quote: Quote, companySettings: any): string {
           </div>
           <div class="total-row">
             <span class="total-label">稅額 (5%):</span>
-            <span class="total-value">NT$ ${quote.tax?.toLocaleString() || '0'}</span>
+            <span class="total-value">NT$ ${quote.tax_amount?.toLocaleString() || '0'}</span>
           </div>
           <div class="total-row grand-total">
             <span class="total-label">總計:</span>
