@@ -43,7 +43,13 @@ const AuthCallback: React.FC = () => {
         }
 
         // 處理Supabase認證回調
+        console.log('開始處理認證回調...');
+        
+        // 先嘗試從URL參數獲取會話信息
         const { data, error: authError } = await supabase.auth.getSession();
+        
+        console.log('會話數據:', data);
+        console.log('認證錯誤:', authError);
         
         if (authError) {
           console.error('獲取會話失敗:', authError);
@@ -57,26 +63,35 @@ const AuthCallback: React.FC = () => {
           return;
         }
 
-        if (data.session) {
+        if (data.session && data.session.user) {
           const user = data.session.user;
           console.log('Google 登錄成功:', user.email);
+          console.log('用戶資料:', user.user_metadata);
           
           setStatus('success');
-          setMessage(`歡迎 ${user.email}！正在跳轉到首頁...`);
+          setMessage(`歡迎 ${user.user_metadata?.full_name || user.email}！正在跳轉到首頁...`);
           
-          // 1.5秒後重定向到首頁
+          // 縮短重定向時間，讓用戶更快進入系統
           setTimeout(() => {
             navigate('/', { replace: true });
-          }, 1500);
+          }, 1000);
         } else {
-          console.log('沒有找到有效會話');
-          setStatus('error');
-          setMessage('Google 登錄會話無效，請重新登錄');
+          console.log('沒有找到有效會話，會話數據:', data);
           
-          // 3秒後重定向到登錄頁面
-          setTimeout(() => {
-            navigate('/auth/login', { replace: true });
-          }, 3000);
+          // 嘗試等待一下再檢查會話
+          setTimeout(async () => {
+            const { data: retryData } = await supabase.auth.getSession();
+            if (retryData.session) {
+              console.log('重試後找到會話:', retryData.session.user.email);
+              navigate('/', { replace: true });
+            } else {
+              setStatus('error');
+              setMessage('Google 登錄會話無效，請重新登錄');
+              setTimeout(() => {
+                navigate('/auth/login', { replace: true });
+              }, 3000);
+            }
+          }, 1000);
         }
       } catch (error) {
         console.error('處理認證回調時發生錯誤:', error);

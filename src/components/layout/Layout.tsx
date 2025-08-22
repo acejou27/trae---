@@ -263,10 +263,15 @@ export function Layout({ children }: LayoutProps): JSX.Element {
                     className="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
                     onClick={async () => {
                       setUserMenuOpen(false);
+                      console.log('側邊欄登出按鈕被點擊');
                       try {
+                        console.log('開始執行登出...');
                         await signOut();
+                        console.log('登出成功完成');
                       } catch (error) {
                         console.error('登出失敗:', error);
+                        // 可以在這裡添加用戶友好的錯誤提示
+                        alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
                       }
                     }}
                     disabled={loading}
@@ -309,10 +314,15 @@ export function Layout({ children }: LayoutProps): JSX.Element {
                   type="button"
                   className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
                   onClick={async () => {
+                    console.log('頂部導航登出按鈕被點擊');
                     try {
+                      console.log('開始執行登出...');
                       await signOut();
+                      console.log('登出成功完成');
                     } catch (error) {
                       console.error('登出失敗:', error);
+                      // 可以在這裡添加用戶友好的錯誤提示
+                      alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
                     }
                   }}
                   disabled={loading}

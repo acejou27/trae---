@@ -20,6 +20,7 @@ import { CompanySettings } from './pages/settings/CompanySettings';
 import UserProfile from './pages/settings/UserProfile';
 import Login from './pages/auth/Login';
 import AuthCallback from './pages/auth/AuthCallback';
+import AuthDebug from './pages/auth/AuthDebug';
 import './index.css';
 
 /**
@@ -34,6 +35,7 @@ function App(): JSX.Element {
           {/* 認證相關路由（不需要Layout） */}
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/debug" element={<AuthDebug />} />
           
           {/* 受保護的應用程式路由 */}
           <Route path="/*" element={

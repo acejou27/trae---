@@ -52,8 +52,9 @@ export const useAuth = (): UseAuthReturn => {
 
   // 更新認證狀態
   const updateAuthState = useCallback((session: Session | null) => {
+    console.log('更新認證狀態:', session ? `用戶: ${session.user?.email}` : '清除狀態');
     setState({
-      user: session?.user ?? null,
+      user: session?.user || null,
       session,
       loading: false,
       error: null
@@ -137,16 +138,36 @@ export const useAuth = (): UseAuthReturn => {
       setLoading(true);
       clearError();
 
+      // 檢查當前會話狀態
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.warn('獲取會話狀態失敗:', sessionError);
+      }
+      
+      if (!session) {
+        console.log('沒有活動會話，直接清除本地狀態');
+        updateAuthState(null);
+        setLoading(false);
+        return;
+      }
+
+      console.log('正在登出用戶:', session.user?.email);
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error('登出錯誤:', error);
         throw error;
       }
 
+      console.log('登出成功');
       updateAuthState(null);
+      setLoading(false);
     } catch (error) {
+      console.error('登出過程中發生錯誤:', error);
       const errorMessage = handleSupabaseError(error as AuthError);
       setError(errorMessage);
+      setLoading(false);
       throw new Error(errorMessage);
     }
   }, [setLoading, clearError, updateAuthState, setError]);
@@ -160,16 +181,19 @@ export const useAuth = (): UseAuthReturn => {
     // 獲取初始會話
     const getInitialSession = async () => {
       try {
+        console.log('正在獲取初始會話...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('獲取會話失敗:', error);
           if (mounted) {
             setError(handleSupabaseError(error));
+            setLoading(false);
           }
           return;
         }
 
+        console.log('初始會話狀態:', session ? `用戶: ${session.user?.email}` : '無會話');
         if (mounted) {
           updateAuthState(session);
         }
@@ -177,6 +201,7 @@ export const useAuth = (): UseAuthReturn => {
         console.error('初始化認證狀態失敗:', error);
         if (mounted) {
           setError('初始化認證狀態失敗');
+          setLoading(false);
         }
       }
     };
@@ -192,16 +217,54 @@ export const useAuth = (): UseAuthReturn => {
         
         switch (event) {
           case 'SIGNED_IN':
+            console.log('用戶登錄成功:', session?.user?.email);
+            // 立即更新認證狀態，確保用戶能快速進入系統
+            updateAuthState(session);
+            
+            // 異步檢查和創建個人資料，不阻塞認證流程
+            if (session?.user) {
+              setTimeout(async () => {
+                try {
+                  const { data: profile, error } = await supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('user_id', session.user.id)
+                    .single();
+                  
+                  if (error && error.code === 'PGRST116') {
+                    console.log('為新用戶創建個人資料...');
+                    await supabase
+                      .from('user_profiles')
+                      .insert({
+                        user_id: session.user.id,
+                        display_name: session.user.user_metadata?.full_name || 
+                                    session.user.user_metadata?.name || 
+                                    session.user.email?.split('@')[0] || '用戶',
+                        job_title: '',
+                        phone: ''
+                      });
+                    console.log('新用戶個人資料創建完成');
+                  }
+                } catch (err) {
+                  console.error('個人資料處理錯誤:', err);
+                }
+              }, 100);
+            }
+            break;
           case 'TOKEN_REFRESHED':
+            console.log('Token已刷新:', session?.user?.email);
             updateAuthState(session);
             break;
           case 'SIGNED_OUT':
+            console.log('用戶已登出');
             updateAuthState(null);
             break;
           case 'PASSWORD_RECOVERY':
+            console.log('密碼重置事件');
             // 處理密碼重置
             break;
           default:
+            console.log('其他認證事件:', event);
             updateAuthState(session);
         }
       }

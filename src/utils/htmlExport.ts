@@ -505,8 +505,11 @@ export function previewQuoteHTML(quote: Quote): void {
   const newWindow = window.open('', '_blank');
   
   if (newWindow) {
-    newWindow.document.write(htmlContent);
-    newWindow.document.close();
+    // 使用安全的方法替代 document.write
+    const doc = newWindow.document;
+    doc.open();
+    doc.documentElement.innerHTML = htmlContent;
+    doc.close();
   } else {
     alert('無法開啟預覽視窗，請檢查瀏覽器設定');
   }

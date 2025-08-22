@@ -26,11 +26,21 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   fallback,
   redirectTo = '/auth/login'
 }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
   const location = useLocation();
+
+  // 詳細的認證狀態日誌
+  console.log('ProtectedRoute 狀態檢查:', {
+    loading,
+    hasUser: !!user,
+    hasSession: !!session,
+    userEmail: user?.email,
+    currentPath: location.pathname
+  });
 
   // 如果正在載入認證狀態，顯示載入畫面
   if (loading) {
+    console.log('ProtectedRoute: 認證狀態載入中...');
     return (
       fallback || (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -43,8 +53,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // 如果用戶未登錄，重定向到登錄頁面
-  if (!user) {
+  // 檢查用戶和會話狀態
+  const isAuthenticated = user && session;
+  
+  if (!isAuthenticated) {
+    console.log('ProtectedRoute: 用戶未認證，重定向到登錄頁面', {
+      hasUser: !!user,
+      hasSession: !!session
+    });
     return (
       <Navigate 
         to={redirectTo} 
@@ -53,6 +69,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       />
     );
   }
+
+  console.log('ProtectedRoute: 用戶已認證，允許訪問:', {
+    email: user.email,
+    path: location.pathname
+  });
 
   // 用戶已登錄，渲染子組件
   return <>{children}</>;

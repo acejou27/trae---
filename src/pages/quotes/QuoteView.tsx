@@ -32,6 +32,7 @@ export function QuoteView(): JSX.Element {
     quotes, 
     currentQuote,
     loading,
+    error,
     fetchQuotes,
     fetchQuoteById,
     fetchQuoteItems,
@@ -55,7 +56,8 @@ export function QuoteView(): JSX.Element {
           await fetchQuoteById(id);
           
           // 載入報價單項目
-          await fetchQuoteItems(id);
+          const items = await fetchQuoteItems(id);
+          console.log('載入的報價單項目:', items);
         } catch (error) {
           console.error('載入報價單失敗:', error);
           setQuote(null);
@@ -70,7 +72,12 @@ export function QuoteView(): JSX.Element {
     if (savedSettings) {
       try {
         const settings = JSON.parse(savedSettings);
-        setCompanySettings(settings);
+        setCompanySettings(prev => ({
+          ...prev,
+          ...settings,
+          // 確保logo有預設值
+          logo: settings.logo || ''
+        }));
       } catch (error) {
         console.error('載入公司設定失敗:', error);
       }
@@ -85,7 +92,21 @@ export function QuoteView(): JSX.Element {
   // 監聽 currentQuote 的變化
   useEffect(() => {
     if (currentQuote && currentQuote.id === id) {
-      setQuote(currentQuote);
+      // 載入報價單項目並合併到quote中
+      const loadQuoteWithItems = async () => {
+        try {
+          const items = await fetchQuoteItems(id);
+          setQuote({
+            ...currentQuote,
+            items: items || []
+          });
+        } catch (error) {
+          console.error('載入報價單項目失敗:', error);
+          setQuote(currentQuote);
+        }
+      };
+      
+      loadQuoteWithItems();
     }
   }, [currentQuote, id]);
 
@@ -174,6 +195,11 @@ export function QuoteView(): JSX.Element {
       <div className="text-center py-12">
         <h3 className="text-lg font-medium text-gray-900">找不到報價單</h3>
         <p className="mt-1 text-sm text-gray-500">請檢查報價單編號是否正確</p>
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 rounded-md">
+            <p className="text-sm text-red-600">錯誤: {error}</p>
+          </div>
+        )}
         <div className="mt-6">
           <Link
             to="/quotes"
@@ -185,6 +211,11 @@ export function QuoteView(): JSX.Element {
       </div>
     );
   }
+
+  // 調試信息
+  console.log('當前報價單:', quote);
+  console.log('報價單項目:', quote.items);
+  console.log('公司設定:', companySettings);
 
   return (
     <div className="space-y-6">
@@ -250,18 +281,29 @@ export function QuoteView(): JSX.Element {
           {/* 公司標題 */}
           <div className="text-center mb-8">
             {/* 公司Logo */}
-            {companySettings.logo && (
-              <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-4">
+              {companySettings.logo ? (
                 <img 
                   src={companySettings.logo} 
                   alt="公司Logo" 
                   className="w-30 h-30 object-contain"
                   style={{ width: '120px', height: '120px' }}
+                  onError={(e) => {
+                    console.error('圖片載入失敗:', companySettings.logo);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
-              </div>
-            )}
+              ) : (
+                <div 
+                  className="w-30 h-30 bg-gray-200 rounded-lg flex items-center justify-center"
+                  style={{ width: '120px', height: '120px' }}
+                >
+                  <span className="text-gray-500 text-sm">公司Logo</span>
+                </div>
+              )}
+            </div>
             <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
-
+            <h3 className="text-xl text-gray-600 mt-2">{companySettings.companyName}</h3>
           </div>
 
           {/* 基本資訊 */}
@@ -358,28 +400,36 @@ export function QuoteView(): JSX.Element {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {quote.items?.map((item, index) => (
-                    <tr key={item.id || index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {item.product_name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {item.description || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {item.quantity.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.unit}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        NT$ {item.unit_price.toLocaleString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        NT$ {item.amount.toLocaleString()}
+                  {quote.items && quote.items.length > 0 ? (
+                    quote.items.map((item, index) => (
+                      <tr key={item.id || index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.product_name || '未知項目'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {item.description || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          {(item.quantity || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.unit || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          NT$ {(item.unit_price || 0).toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                          NT$ {(item.amount || (item.quantity || 0) * (item.unit_price || 0)).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                        暫無報價項目
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -389,18 +439,35 @@ export function QuoteView(): JSX.Element {
           <div className="flex justify-end mb-8">
             <div className="w-64">
               <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">小計:</span>
-                  <span className="text-sm font-medium">NT$ {quote.subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">稅額 ({quote.tax_rate}%):</span>
-                  <span className="text-sm font-medium">NT$ {quote.tax_amount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-base font-medium text-gray-900">總計:</span>
-                  <span className="text-base font-bold text-gray-900">NT$ {quote.total.toLocaleString()}</span>
-                </div>
+                {(() => {
+                  // 計算小計、稅額和總計
+                  const items = quote.items || [];
+                  const subtotal = items.reduce((sum, item) => {
+                    const quantity = item.quantity || 0;
+                    const unitPrice = item.unit_price || 0;
+                    return sum + (quantity * unitPrice);
+                  }, 0);
+                  const taxRate = quote.tax_rate || 5; // 預設稅率 5%
+                  const taxAmount = subtotal * (taxRate / 100);
+                  const total = subtotal + taxAmount;
+                  
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">小計:</span>
+                        <span className="text-sm font-medium">NT$ {subtotal.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">稅額 ({taxRate}%):</span>
+                        <span className="text-sm font-medium">NT$ {taxAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-base font-medium text-gray-900">總計:</span>
+                        <span className="text-base font-bold text-gray-900">NT$ {total.toLocaleString()}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
