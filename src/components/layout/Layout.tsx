@@ -3,32 +3,24 @@
  * Created: 2024-12-28
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  HomeIcon,
-  DocumentTextIcon,
-  CogIcon,
   Bars3Icon,
   XMarkIcon,
+  HomeIcon,
+  DocumentTextIcon,
   UsersIcon,
   CubeIcon,
-  UserGroupIcon,
-  BanknotesIcon,
-  BuildingOfficeIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
+  ChevronDownIcon,
   ArrowRightOnRectangleIcon,
-  UserCircleIcon
 } from '@heroicons/react/24/outline';
-import { cn } from '../../lib/utils';
 import { useAuth } from '../../hooks/useAuth';
+import { cn } from '../../utils/cn';
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-/**
- * 導航選單項目介面
- */
+// 導航項目介面
 interface NavItem {
   name: string;
   href: string;
@@ -36,111 +28,139 @@ interface NavItem {
   children?: NavItem[];
 }
 
-/**
- * 導航選單配置
- */
+// 導航配置
 const navigation: NavItem[] = [
+  { name: '首頁', href: '/', icon: HomeIcon },
+  { name: '報價單', href: '/quotes', icon: DocumentTextIcon },
   {
-    name: '首頁',
-    href: '/',
-    icon: HomeIcon
-  },
-  {
-    name: '報價單管理',
-    href: '/quotes',
-    icon: DocumentTextIcon
-  },
-  {
-    name: '基礎資料',
+    name: '設定',
     href: '/settings',
-    icon: CogIcon,
+    icon: Cog6ToothIcon,
     children: [
-      {
-        name: '公司設定',
-        href: '/settings/company',
-        icon: BuildingOfficeIcon
-      },
-      {
-        name: '客戶管理',
-        href: '/settings/customers',
-        icon: UsersIcon
-      },
-      {
-        name: '產品管理',
-        href: '/settings/products',
-        icon: CubeIcon
-      },
-      {
-        name: '負責人管理',
-        href: '/settings/staff',
-        icon: UserGroupIcon
-      },
-      {
-        name: '銀行資料',
-        href: '/settings/banks',
-        icon: BanknotesIcon
-      }
-    ]
-  }
+      { name: '個人資料', href: '/settings/profile', icon: UserCircleIcon },
+      { name: '客戶管理', href: '/settings/customers', icon: UsersIcon },
+      { name: '產品管理', href: '/settings/products', icon: CubeIcon },
+      { name: '員工管理', href: '/settings/staff', icon: UsersIcon },
+      { name: '銀行管理', href: '/settings/banks', icon: DocumentTextIcon },
+      { name: '公司設定', href: '/settings/company', icon: Cog6ToothIcon },
+    ],
+  },
 ];
+
+interface LayoutProps {
+  children: React.ReactNode;
+}
 
 /**
  * 主要佈局組件
- * 提供側邊欄導航和主要內容區域
+ * 提供側邊欄導航、頂部導航和主要內容區域
  */
 export function Layout({ children }: LayoutProps): JSX.Element {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
   const { user, signOut, loading } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // 點擊外部關閉用戶選單
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setUserMenuOpen(false);
       }
-    };
-
-    if (userMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
     }
 
+    document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [userMenuOpen]);
+  }, []);
 
   /**
-   * 檢查當前路由是否為活躍狀態
-   * @param href - 路由路徑
-   * @returns boolean - 是否為活躍狀態
+   * 檢查導航項目是否為當前活動項目
    */
-  const isActive = (href: string): boolean => {
-    if (href === '/') {
-      return location.pathname === '/';
+  const isActiveNavItem = (item: NavItem): boolean => {
+    if (item.href === '/' && location.pathname === '/') {
+      return true;
     }
-    return location.pathname.startsWith(href);
+    if (item.href !== '/' && location.pathname.startsWith(item.href)) {
+      return true;
+    }
+    if (item.children) {
+      return item.children.some(child => location.pathname.startsWith(child.href));
+    }
+    return false;
+  };
+
+  /**
+   * 切換展開狀態
+   */
+  const toggleExpanded = (itemName: string) => {
+    setExpandedItems(prev => 
+      prev.includes(itemName) 
+        ? prev.filter(name => name !== itemName)
+        : [...prev, itemName]
+    );
   };
 
   /**
    * 渲染導航項目
-   * @param item - 導航項目
-   * @param level - 層級深度
-   * @returns JSX.Element
    */
   const renderNavItem = (item: NavItem, level: number = 0): JSX.Element => {
-    const active = isActive(item.href);
+    const active = isActiveNavItem(item);
     const hasChildren = item.children && item.children.length > 0;
-    
+    const isAutoExpanded = hasChildren && item.children.some(child => 
+      location.pathname.startsWith(child.href)
+    );
+    const isManuallyExpanded = expandedItems.includes(item.name);
+    const isExpanded = isAutoExpanded || isManuallyExpanded;
+
+    if (hasChildren) {
+      return (
+        <div key={item.name} className={cn('space-y-1', level > 0 && 'ml-6')}>
+          <div
+            className={cn(
+              'group flex items-center px-2 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors duration-200',
+              active
+                ? 'bg-blue-100 text-blue-700'
+                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            )}
+            onClick={() => toggleExpanded(item.name)}
+          >
+            <item.icon
+              className={cn(
+                'mr-3 h-5 w-5 flex-shrink-0 transition-colors duration-200',
+                active ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'
+              )}
+              aria-hidden="true"
+            />
+            {item.name}
+            <ChevronDownIcon
+              className={cn(
+                'ml-auto h-4 w-4 transition-transform duration-200',
+                isExpanded ? 'rotate-180' : '',
+                active ? 'text-blue-500' : 'text-gray-400'
+              )}
+            />
+          </div>
+          
+          {/* 子選單 */}
+          {isExpanded && (
+            <div className="space-y-1 pl-6">
+              {item.children!.map(child => renderNavItem(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
-      <div key={item.href}>
+      <div key={item.name} className={cn(level > 0 && 'ml-6')}>
         <Link
           to={item.href}
           className={cn(
             'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors duration-200',
-            level === 0 ? 'pl-3' : 'pl-8',
             active
               ? 'bg-blue-100 text-blue-700 border-r-2 border-blue-500'
               : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
@@ -192,9 +212,7 @@ export function Layout({ children }: LayoutProps): JSX.Element {
                 <DocumentTextIcon className="h-8 w-8 text-blue-600" />
               </div>
               <div className="ml-3">
-                <h1 className="text-lg font-semibold text-gray-900">
-                  報價單系統
-                </h1>
+                <h1 className="text-lg font-semibold text-gray-900">報價單系統</h1>
               </div>
             </div>
             
