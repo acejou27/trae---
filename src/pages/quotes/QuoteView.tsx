@@ -19,7 +19,35 @@ import type { Quote } from '../../types';
 interface CompanySettings {
   companyName: string;
   logo: string;
+  stamp?: string; // 報價章圖片
 }
+
+// 銀行設定介面
+interface BankSettings {
+  bankbookImage?: string; // 存摺圖檔
+}
+
+/**
+ * 處理描述文字中的格式化
+ * 將以「＊」開頭、以「：」或「:」結尾的中間字元轉為粗體
+ */
+const formatDescriptionText = (text: string): JSX.Element => {
+  if (!text) return <span>-</span>;
+  
+  // 使用正則表達式匹配以「＊」開頭、以「：」或「:」結尾的文字
+  // 將中間的字元轉為粗體，保留「＊」和「：」符號
+  const formattedText = text.replace(/＊([^：:]*)(：|:)/g, (match, middleText, colon) => {
+    return `＊<strong>${middleText}</strong>${colon}`;
+  });
+  
+  // 將格式化後的文字轉換為 JSX
+  return (
+    <span 
+      className="whitespace-pre-wrap"
+      dangerouslySetInnerHTML={{ __html: formattedText }}
+    />
+  );
+};
 
 /**
  * 報價單查看組件
@@ -42,7 +70,11 @@ export function QuoteView(): JSX.Element {
   const [quote, setQuote] = useState<Quote | null>(null);
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
     companyName: '您的公司名稱',
-    logo: ''
+    logo: '',
+    stamp: ''
+  });
+  const [bankSettings, setBankSettings] = useState<BankSettings>({
+    bankbookImage: ''
   });
 
   /**
@@ -52,12 +84,10 @@ export function QuoteView(): JSX.Element {
     const loadQuote = async () => {
       if (id) {
         try {
+          console.log('開始載入報價單:', id);
           // 直接使用 fetchQuoteById 載入特定報價單
           await fetchQuoteById(id);
-          
-          // 載入報價單項目
-          const items = await fetchQuoteItems(id);
-          console.log('載入的報價單項目:', items);
+          console.log('報價單基本資料載入完成');
         } catch (error) {
           console.error('載入報價單失敗:', error);
           setQuote(null);
@@ -76,10 +106,24 @@ export function QuoteView(): JSX.Element {
           ...prev,
           ...settings,
           // 確保logo有預設值
-          logo: settings.logo || ''
+          logo: settings.logo || '',
+          stamp: settings.stamp || ''
         }));
       } catch (error) {
         console.error('載入公司設定失敗:', error);
+      }
+    }
+    
+    // 載入銀行設定
+    const savedBankSettings = localStorage.getItem('bankSettings');
+    if (savedBankSettings) {
+      try {
+        const settings = JSON.parse(savedBankSettings);
+        setBankSettings({
+          bankbookImage: settings.bankbookImage || ''
+        });
+      } catch (error) {
+        console.error('載入銀行設定失敗:', error);
       }
     }
     
@@ -87,7 +131,7 @@ export function QuoteView(): JSX.Element {
     return () => {
       clearCurrentQuote();
     };
-  }, [id]); // 只依賴 id，避免無限循環
+  }, [id, fetchQuoteById, clearCurrentQuote]); // 添加必要的依賴項
   
   // 監聽 currentQuote 的變化
   useEffect(() => {
@@ -95,20 +139,25 @@ export function QuoteView(): JSX.Element {
       // 載入報價單項目並合併到quote中
       const loadQuoteWithItems = async () => {
         try {
-          const items = await fetchQuoteItems(id);
+          const items = await fetchQuoteItems(id!);
+          console.log('成功載入報價單項目:', items);
           setQuote({
             ...currentQuote,
             items: items || []
           });
         } catch (error) {
           console.error('載入報價單項目失敗:', error);
-          setQuote(currentQuote);
+          // 即使載入項目失敗，也要設置基本的報價單資料
+          setQuote({
+            ...currentQuote,
+            items: []
+          });
         }
       };
       
       loadQuoteWithItems();
     }
-  }, [currentQuote, id]);
+  }, [currentQuote, id, fetchQuoteItems]);
 
   /**
    * 處理列印
@@ -303,7 +352,6 @@ export function QuoteView(): JSX.Element {
               )}
             </div>
             <h2 className="text-3xl font-bold text-gray-900">報價單</h2>
-            <h3 className="text-xl text-gray-600 mt-2">{companySettings.companyName}</h3>
           </div>
 
           {/* 基本資訊 */}
@@ -364,8 +412,7 @@ export function QuoteView(): JSX.Element {
                 <div>
                   <span className="text-sm font-medium text-gray-500">負責人:</span>
                   <span className="ml-2 text-sm text-gray-900">
-                    {quote.staff?.name || '未知'}
-                    {quote.staff?.title && ` (${quote.staff.title})`}
+                    {quote.staff?.name || '未指定'}
                   </span>
                 </div>
               </div>
@@ -380,22 +427,22 @@ export function QuoteView(): JSX.Element {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      項目
+                      項目名稱
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      說明
+                      規格說明
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       數量
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       單位
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       單價
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      金額
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      小計
                     </th>
                   </tr>
                 </thead>
@@ -404,28 +451,28 @@ export function QuoteView(): JSX.Element {
                     quote.items.map((item, index) => (
                       <tr key={item.id || index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.product_name || '未知項目'}
+                          {item.product_name}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {item.description || '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          {(item.quantity || 0).toLocaleString()}
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {formatDescriptionText(item.description || '')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.unit || '-'}
+                          {item.quantity}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          NT$ {(item.unit_price || 0).toLocaleString()}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {item.unit}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                          NT$ {(item.amount || (item.quantity || 0) * (item.unit_price || 0)).toLocaleString()}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          NT$ {item.unit_price.toLocaleString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          NT$ {(item.quantity * item.unit_price).toLocaleString()}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                      <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                         暫無報價項目
                       </td>
                     </tr>
@@ -435,16 +482,95 @@ export function QuoteView(): JSX.Element {
             </div>
           </div>
 
-          {/* 金額計算 */}
-          <div className="flex justify-end mb-8">
+          {/* 報價章和金額計算 */}
+          <div className="flex justify-between items-start mb-8">
+            {/* 報價章 */}
+            <div className="flex-shrink-0">
+              <div className="text-center">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">報價章</h4>
+                {companySettings.stamp ? (
+                  <div className="relative group">
+                    <img 
+                      src={companySettings.stamp} 
+                      alt="報價章" 
+                      className="w-24 h-24 object-contain border border-gray-200 rounded cursor-pointer"
+                      onClick={() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/*';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const newSettings = {
+                                ...companySettings,
+                                stamp: event.target?.result as string
+                              };
+                              localStorage.setItem('companySettings', JSON.stringify(newSettings));
+                              window.location.reload();
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        };
+                        input.click();
+                      }}
+                      onError={(e) => {
+                        console.error('報價章載入失敗:', companySettings.stamp);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded flex items-center justify-center">
+                      <span className="text-white text-xs">點擊更換</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="w-24 h-24 bg-gray-100 border border-gray-200 rounded flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (event) => {
+                            const newSettings = {
+                              ...companySettings,
+                              stamp: event.target?.result as string
+                            };
+                            localStorage.setItem('companySettings', JSON.stringify(newSettings));
+                            window.location.reload();
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      };
+                      input.click();
+                    }}
+                  >
+                    <span className="text-xs text-gray-500">點擊上傳報價章</span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-2">可在公司管理設定中配置或直接點擊上傳</p>
+              </div>
+            </div>
+
+            {/* 金額計算 */}
             <div className="w-64">
               <div className="space-y-2">
                 {(() => {
-                  // 計算小計、稅額和總計
-                  const items = quote.items || [];
-                  const subtotal = items.reduce((sum, item) => {
-                    const quantity = item.quantity || 0;
-                    const unitPrice = item.unit_price || 0;
+                  if (!quote.items || quote.items.length === 0) {
+                    return (
+                      <div className="text-center text-gray-500">
+                        <span className="text-sm">暫無項目</span>
+                      </div>
+                    );
+                  }
+                  
+                  const subtotal = quote.items.reduce((sum, item) => {
+                    const quantity = Number(item.quantity) || 0;
+                    const unitPrice = Number(item.unit_price) || 0;
                     return sum + (quantity * unitPrice);
                   }, 0);
                   const taxRate = quote.tax_rate || 5; // 預設稅率 5%
@@ -486,26 +612,103 @@ export function QuoteView(): JSX.Element {
           {quote.bank && (
             <div className="mb-8">
               <h3 className="text-lg font-medium text-gray-900 mb-4">匯款資訊</h3>
-              <div className="bg-blue-50 rounded-lg p-4">
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-sm font-medium text-blue-900">銀行名稱:</span>
-                    <span className="ml-2 text-sm text-blue-800">{quote.bank.bank_name}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-blue-900">帳戶號碼:</span>
-                    <span className="ml-2 text-sm text-blue-800">{quote.bank.account_number}</span>
-                  </div>
-                  <div>
-                    <span className="text-sm font-medium text-blue-900">戶名:</span>
-                    <span className="ml-2 text-sm text-blue-800">{quote.bank.account_name}</span>
-                  </div>
-                  {quote.bank.branch_name && (
-                    <div>
-                      <span className="text-sm font-medium text-blue-900">分行:</span>
-                      <span className="ml-2 text-sm text-blue-800">{quote.bank.branch_name}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* 銀行資訊 */}
+                <div className="lg:col-span-2">
+                  <div className="bg-blue-50 rounded-lg p-4">
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-sm font-medium text-blue-900">銀行名稱:</span>
+                        <span className="ml-2 text-sm text-blue-800">{quote.bank.bank_name}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-blue-900">帳戶號碼:</span>
+                        <span className="ml-2 text-sm text-blue-800">{quote.bank.account_number}</span>
+                      </div>
+                      <div>
+                        <span className="text-sm font-medium text-blue-900">戶名:</span>
+                        <span className="ml-2 text-sm text-blue-800">{quote.bank.account_name}</span>
+                      </div>
+                      {quote.bank.branch_name && (
+                        <div>
+                          <span className="text-sm font-medium text-blue-900">分行:</span>
+                          <span className="ml-2 text-sm text-blue-800">{quote.bank.branch_name}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                </div>
+                
+                {/* 存摺圖檔顯示區域 */}
+                <div className="lg:col-span-1">
+                  <div className="text-center">
+                    <h4 className="text-sm font-medium text-gray-900 mb-2">存摺圖檔</h4>
+                    {bankSettings.bankbookImage ? (
+                      <div className="relative group">
+                        <img 
+                          src={bankSettings.bankbookImage} 
+                          alt="存摺圖檔" 
+                          className="w-full max-w-96 h-64 object-cover mx-auto border border-gray-200 rounded-lg shadow-sm cursor-pointer"
+                          onClick={() => {
+                            const input = document.createElement('input');
+                            input.type = 'file';
+                            input.accept = 'image/*';
+                            input.onchange = (e) => {
+                              const file = (e.target as HTMLInputElement).files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = (event) => {
+                                  const newBankSettings = {
+                                    ...bankSettings,
+                                    bankbookImage: event.target?.result as string
+                                  };
+                                  localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
+                                  window.location.reload();
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            };
+                            input.click();
+                          }}
+                          onError={(e) => {
+                            console.error('存摺圖檔載入失敗:', bankSettings.bankbookImage);
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
+                          <span className="text-white text-xs">點擊更換</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        className="w-full max-w-96 h-64 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center mx-auto cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                const newBankSettings = {
+                                  ...bankSettings,
+                                  bankbookImage: event.target?.result as string
+                                };
+                                localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
+                                window.location.reload();
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          };
+                          input.click();
+                        }}
+                      >
+                        <span className="text-xs text-gray-500">點擊上傳存摺圖檔</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-500 mt-2">可在銀行管理設定中配置或直接點擊上傳</p>
+                  </div>
                 </div>
               </div>
             </div>

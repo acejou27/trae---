@@ -21,6 +21,7 @@ interface CompanySettings {
   website: string;
   taxId: string;
   logo: string | null;
+  stamp?: string; // 報價章圖片
 }
 
 /**
@@ -33,7 +34,8 @@ const defaultSettings: CompanySettings = {
   email: '',
   website: '',
   taxId: '',
-  logo: null
+  logo: null,
+  stamp: undefined
 };
 
 /**
@@ -277,9 +279,9 @@ export function CompanySettings(): JSX.Element {
           </div>
         </div>
 
-        {/* Logo設定 */}
+        {/* Logo和報價章設定 */}
         <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4">公司Logo</h2>
+          <h2 className="text-lg font-medium text-gray-900 mb-4">公司Logo和報價章</h2>
           
           <div className="space-y-4">
             {/* Logo預覽 */}
@@ -338,6 +340,88 @@ export function CompanySettings(): JSX.Element {
                 <PhotoIcon className="h-5 w-5 mr-2" />
                 {settings.logo ? '更換Logo' : '上傳Logo'}
               </label>
+            </div>
+          </div>
+          
+          {/* 報價章設定 */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h3 className="text-md font-medium text-gray-900 mb-4">報價章</h3>
+            
+            <div className="space-y-4">
+              {/* 報價章預覽 */}
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                {settings.stamp ? (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <img
+                        src={settings.stamp}
+                        alt="報價章"
+                        className="object-contain border border-gray-200 rounded"
+                        style={{ width: '80px', height: '80px' }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">預覽尺寸：80 x 80 像素</p>
+                    <button
+                      onClick={() => {
+                        setSettings(prev => ({ ...prev, stamp: undefined }));
+                      }}
+                      className="inline-flex items-center px-3 py-2 border border-red-300 shadow-sm text-sm leading-4 font-medium rounded-md text-red-700 bg-white hover:bg-red-50"
+                    >
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      移除報價章
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex justify-center">
+                      <div className="w-20 h-20 border-2 border-dashed border-gray-300 rounded flex items-center justify-center">
+                        <PhotoIcon className="h-8 w-8 text-gray-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">點擊上傳報價章</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        建議尺寸：80 x 80 像素<br/>
+                        支援 JPG、PNG 格式，檔案大小不超過 2MB
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 上傳按鈕 */}
+              <div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      if (file.size > 2 * 1024 * 1024) {
+                        setMessage({ type: 'error', text: '檔案大小不能超過 2MB' });
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setSettings(prev => ({
+                          ...prev,
+                          stamp: event.target?.result as string
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="hidden"
+                  id="stamp-upload"
+                />
+                <label
+                  htmlFor="stamp-upload"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                >
+                  <PhotoIcon className="h-5 w-5 mr-2" />
+                  {settings.stamp ? '更換報價章' : '上傳報價章'}
+                </label>
+              </div>
             </div>
           </div>
         </div>
