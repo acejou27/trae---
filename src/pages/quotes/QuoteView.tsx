@@ -648,7 +648,7 @@ export function QuoteView(): JSX.Element {
                         <img 
                           src={bankSettings.bankbookImage} 
                           alt="存摺圖檔" 
-                          className="w-full max-w-48 h-32 object-cover mx-auto border border-gray-200 rounded-lg shadow-sm cursor-pointer"
+                          className="w-full max-w-96 h-64 object-cover mx-auto border border-gray-200 rounded-lg shadow-sm cursor-pointer"
                           onClick={() => {
                             const input = document.createElement('input');
                             input.type = 'file';
@@ -681,7 +681,7 @@ export function QuoteView(): JSX.Element {
                       </div>
                     ) : (
                       <div 
-                        className="w-full max-w-48 h-32 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center mx-auto cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                        className="w-full max-w-96 h-64 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center mx-auto cursor-pointer hover:bg-gray-200 transition-colors duration-200"
                         onClick={() => {
                           const input = document.createElement('input');
                           input.type = 'file';
