@@ -11,6 +11,7 @@ import { Home } from './pages/Home';
 import { QuoteList } from './pages/quotes/QuoteList';
 import { QuoteForm } from './pages/quotes/QuoteForm';
 import { QuoteView } from './pages/quotes/QuoteView';
+import { PublicQuoteView } from './pages/quotes/PublicQuoteView';
 import { CustomerManagement as CustomerList } from './pages/settings/CustomerManagement';
 import { ProductManagement as ProductList } from './pages/settings/ProductManagement';
 import { StaffManagement as StaffList } from './pages/settings/StaffManagement';
@@ -21,6 +22,7 @@ import UserProfile from './pages/settings/UserProfile';
 import Login from './pages/auth/Login';
 import AuthCallback from './pages/auth/AuthCallback';
 import AuthDebug from './pages/auth/AuthDebug';
+import OAuthDebug from './pages/auth/OAuthDebug';
 import './index.css';
 
 /**
@@ -36,6 +38,10 @@ function App(): JSX.Element {
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/auth/debug" element={<AuthDebug />} />
+          <Route path="/auth/oauth-debug" element={<OAuthDebug />} />
+          
+          {/* 公開分享路由（不需要登入） */}
+          <Route path="/share/:shareId" element={<PublicQuoteView />} />
           
           {/* 受保護的應用程式路由 */}
           <Route path="/*" element={

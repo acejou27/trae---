@@ -107,58 +107,59 @@ function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
       ${companySettings.taxId ? `<div class="company-tax-id">統一編號: ${companySettings.taxId}</div>` : ''}
     </div>
     
-    <!-- 報價單資訊 -->
-    <div class="quote-info">
-      <div class="info-row">
-        <div class="info-item">
-          <span class="label">報價單號:</span>
-          <span class="value">${quote.quote_number}</span>
+    <!-- 基本資訊 -->
+    <div class="basic-info">
+      <div class="info-section">
+        <div class="info-column">
+          <h3>客戶資訊</h3>
+          <div class="info-details">
+            <div class="info-item">
+              <span class="label">公司名稱:</span>
+              <span class="value">${quote.customer?.company_name || '未知客戶'}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">聯絡人:</span>
+              <span class="value">${quote.contact_person}</span>
+            </div>
+            ${quote.customer?.phone ? `
+            <div class="info-item">
+              <span class="label">電話:</span>
+              <span class="value">${quote.customer.phone}</span>
+            </div>` : ''}
+            ${quote.customer?.email ? `
+            <div class="info-item">
+              <span class="label">電子郵件:</span>
+              <span class="value">${quote.customer.email}</span>
+            </div>` : ''}
+            ${quote.customer?.address ? `
+            <div class="info-item">
+              <span class="label">地址:</span>
+              <span class="value">${quote.customer.address}</span>
+            </div>` : ''}
+          </div>
         </div>
-        <div class="info-item">
-          <span class="label">報價日期:</span>
-          <span class="value">${new Date(quote.quote_date).toLocaleDateString('zh-TW')}</span>
+        
+        <div class="info-column">
+          <h3>報價資訊</h3>
+          <div class="info-details">
+            <div class="info-item">
+              <span class="label">報價單號:</span>
+              <span class="value">${quote.quote_number}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">報價日期:</span>
+              <span class="value">${new Date(quote.quote_date).toLocaleDateString('zh-TW')}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">有效期限:</span>
+              <span class="value">${new Date(quote.valid_until).toLocaleDateString('zh-TW')}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">負責人:</span>
+              <span class="value">${quote.contact_person}</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="info-row">
-        <div class="info-item">
-          <span class="label">有效期限:</span>
-          <span class="value">${new Date(quote.valid_until).toLocaleDateString('zh-TW')}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">負責人:</span>
-          <span class="value">${quote.contact_person}</span>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 客戶資訊 -->
-    <div class="customer-info">
-      <h3>客戶資訊</h3>
-      <div class="customer-details">
-        <div class="customer-item">
-          <span class="label">公司名稱:</span>
-          <span class="value">${quote.customer?.company_name || '未提供'}</span>
-        </div>
-        ${quote.customer?.contact_person ? `
-        <div class="customer-item">
-          <span class="label">聯絡人:</span>
-          <span class="value">${quote.customer.contact_person}</span>
-        </div>` : ''}
-        ${quote.customer?.phone ? `
-        <div class="customer-item">
-          <span class="label">電話:</span>
-          <span class="value">${quote.customer.phone}</span>
-        </div>` : ''}
-        ${quote.customer?.email ? `
-        <div class="customer-item">
-          <span class="label">電子郵件:</span>
-          <span class="value">${quote.customer.email}</span>
-        </div>` : ''}
-        ${quote.customer?.address ? `
-        <div class="customer-item">
-          <span class="label">地址:</span>
-          <span class="value">${quote.customer.address}</span>
-        </div>` : ''}
       </div>
     </div>
     
@@ -190,20 +191,37 @@ function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
       </table>
     </div>
     
-    <!-- 總計 -->
-    <div class="totals-section">
-      <div class="totals-table">
-        <div class="total-row">
-          <span class="total-label">小計:</span>
-          <span class="total-value">NT$ ${subtotal.toLocaleString()}</span>
+    <!-- 報價章和金額計算 -->
+    <div class="quote-footer">
+      <!-- 報價章 -->
+      <div class="stamp-section">
+        <div class="stamp-container">
+          <h4>報價章</h4>
+          ${companySettings.stamp ? `
+          <div class="stamp-image">
+            <img src="${companySettings.stamp}" alt="報價章" />
+          </div>` : `
+          <div class="stamp-placeholder">
+            <span>報價章</span>
+          </div>`}
         </div>
-        <div class="total-row">
-          <span class="total-label">稅額 (5%):</span>
-          <span class="total-value">NT$ ${tax.toLocaleString()}</span>
-        </div>
-        <div class="total-row final-total">
-          <span class="total-label">總計:</span>
-          <span class="total-value">NT$ ${total.toLocaleString()}</span>
+      </div>
+
+      <!-- 金額計算 -->
+      <div class="totals-section">
+        <div class="totals-table">
+          <div class="total-row">
+            <span class="total-label">小計:</span>
+            <span class="total-value">NT$ ${subtotal.toLocaleString()}</span>
+          </div>
+          <div class="total-row">
+            <span class="total-label">稅額 (5%):</span>
+            <span class="total-value">NT$ ${tax.toLocaleString()}</span>
+          </div>
+          <div class="total-row final-total">
+            <span class="total-label">總計:</span>
+            <span class="total-value">NT$ ${total.toLocaleString()}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -212,7 +230,9 @@ function generateQuoteHTML(quote: Quote, includeStyles: boolean): string {
     ${quote.notes ? `
     <div class="notes-section">
       <h3>備註</h3>
-      <p>${quote.notes}</p>
+      <div class="notes-content">
+        <p>${quote.notes}</p>
+      </div>
     </div>` : ''}
     
     <!-- 頁尾 -->
@@ -267,14 +287,15 @@ function getQuoteStyles(): string {
       font-weight: bold;
     }
     
-<<<<<<< HEAD
     .company-logo {
       margin-bottom: 15px;
+      display: flex;
+      justify-content: center;
     }
     
     .company-logo img {
-      max-height: 80px;
-      max-width: 200px;
+      width: 120px;
+      height: 120px;
       object-fit: contain;
     }
     
@@ -304,48 +325,48 @@ function getQuoteStyles(): string {
     .company-tax-id {
       font-size: 0.9em;
       color: #7f8c8d;
-=======
-    .company-name {
-      font-size: 1.2em;
-      color: #7f8c8d;
-      font-weight: 500;
->>>>>>> 0e18d87 (feat(报价单): 添加HTML导出功能并优化PDF导出)
     }
     
-    .quote-info {
+    .basic-info {
       margin-bottom: 30px;
     }
     
-    .info-row {
+    .info-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    
+    .info-column h3 {
+      color: #2c3e50;
+      margin-bottom: 15px;
+      font-size: 1.125em;
+      font-weight: 500;
+    }
+    
+    .info-details {
       display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
+      flex-direction: column;
+      gap: 8px;
     }
     
     .info-item {
-      flex: 1;
-    }
-    
-    .customer-info {
-      margin-bottom: 30px;
-    }
-    
-    .customer-info h3 {
-      color: #2c3e50;
-      margin-bottom: 15px;
-      font-size: 1.3em;
-      border-bottom: 1px solid #e5e5e5;
-      padding-bottom: 5px;
-    }
-    
-    .customer-details {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    
-    .customer-item {
       display: flex;
+      align-items: flex-start;
+    }
+    
+    .info-item .label {
+      font-weight: 500;
+      color: #6b7280;
+      font-size: 0.875em;
+      min-width: 80px;
+      margin-right: 8px;
+    }
+    
+    .info-item .value {
+      color: #111827;
+      font-size: 0.875em;
+      flex: 1;
     }
     
     .items-section {
@@ -355,58 +376,143 @@ function getQuoteStyles(): string {
     .items-section h3 {
       color: #2c3e50;
       margin-bottom: 15px;
-      font-size: 1.3em;
-      border-bottom: 1px solid #e5e5e5;
-      padding-bottom: 5px;
+      font-size: 1.125em;
+      font-weight: 500;
     }
     
     .items-table {
       width: 100%;
       border-collapse: collapse;
       margin-bottom: 20px;
-    }
-    
-    .items-table th,
-    .items-table td {
-      border: 1px solid #ddd;
-      padding: 12px;
-      text-align: left;
+      overflow: hidden;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
     }
     
     .items-table th {
-      background-color: #f8f9fa;
-      font-weight: bold;
-      color: #2c3e50;
+      background-color: #f9fafb;
+      padding: 12px 24px;
+      text-align: left;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .items-table td {
+      padding: 16px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.875rem;
+      color: #111827;
+    }
+    
+    .items-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .items-table td:nth-child(1) {
+      font-weight: 500;
     }
     
     .items-table td:nth-child(3),
+    .items-table td:nth-child(4),
     .items-table td:nth-child(5),
     .items-table td:nth-child(6) {
-      text-align: right;
+      white-space: nowrap;
+    }
+    
+    .quote-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+      gap: 24px;
+    }
+    
+    .stamp-section {
+      flex-shrink: 0;
+    }
+    
+    .stamp-container {
+      text-align: center;
+    }
+    
+    .stamp-container h4 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    
+    .stamp-image img {
+      width: 96px;
+      height: 96px;
+      object-fit: contain;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+    }
+    
+    .stamp-placeholder {
+      width: 96px;
+      height: 96px;
+      background-color: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .stamp-placeholder span {
+      font-size: 0.75rem;
+      color: #6b7280;
     }
     
     .totals-section {
-      margin-bottom: 30px;
+      width: 256px;
     }
     
     .totals-table {
-      max-width: 300px;
-      margin-left: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
     
     .total-row {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid #eee;
+      align-items: center;
     }
     
-    .final-total {
-      font-weight: bold;
-      font-size: 1.1em;
-      color: #2c3e50;
-      border-bottom: 2px solid #2c3e50;
-      margin-top: 10px;
+    .total-row.final-total {
+      border-top: 1px solid #e5e7eb;
+      padding-top: 8px;
+      margin-top: 8px;
+    }
+    
+    .total-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    
+    .total-value {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #111827;
+    }
+    
+    .final-total .total-label {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #111827;
+    }
+    
+    .final-total .total-value {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #111827;
     }
     
     .notes-section {
@@ -416,16 +522,22 @@ function getQuoteStyles(): string {
     .notes-section h3 {
       color: #2c3e50;
       margin-bottom: 15px;
-      font-size: 1.3em;
-      border-bottom: 1px solid #e5e5e5;
-      padding-bottom: 5px;
+      font-size: 1.125em;
+      font-weight: 500;
+    }
+    
+    .notes-section .notes-content {
+      background-color: #f9fafb;
+      padding: 16px;
+      border-radius: 8px;
     }
     
     .notes-section p {
-      background-color: #f8f9fa;
-      padding: 15px;
-      border-radius: 4px;
-      border-left: 4px solid #3498db;
+      font-size: 0.875rem;
+      color: #374151;
+      white-space: pre-wrap;
+      margin: 0;
+      line-height: 1.5;
     }
     
     .footer {
@@ -436,27 +548,7 @@ function getQuoteStyles(): string {
       padding-top: 20px;
     }
     
-    .label {
-      font-weight: bold;
-      color: #2c3e50;
-      margin-right: 10px;
-      min-width: 80px;
-      display: inline-block;
-    }
-    
-    .value {
-      color: #34495e;
-    }
-    
-    .total-label {
-      font-weight: bold;
-      color: #2c3e50;
-    }
-    
-    .total-value {
-      font-weight: bold;
-      color: #27ae60;
-    }
+
     
     @media print {
       body {
@@ -476,21 +568,33 @@ function getQuoteStyles(): string {
         padding: 20px;
       }
       
-      .info-row {
-        flex-direction: column;
+      .info-section {
+        grid-template-columns: 1fr;
+        gap: 16px;
       }
       
-      .customer-details {
-        grid-template-columns: 1fr;
+      .quote-footer {
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+      
+      .totals-section {
+        width: 100%;
+        max-width: 300px;
       }
       
       .items-table {
-        font-size: 0.9em;
+        font-size: 0.8rem;
       }
       
       .items-table th,
       .items-table td {
-        padding: 8px;
+        padding: 8px 12px;
+      }
+      
+      .items-table th {
+        font-size: 0.7rem;
       }
     }
   </style>`;

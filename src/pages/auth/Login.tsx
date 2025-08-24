@@ -146,6 +146,16 @@ const Login: React.FC = () => {
                 點擊上方按鈕即表示您同意我們的服務條款和隱私政策
               </p>
             </div>
+
+            {/* 調試鏈接 */}
+            <div className="mt-6 text-center border-t pt-4">
+              <a 
+                href="/auth/debug"
+                className="text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                登錄問題診斷
+              </a>
+            </div>
           </div>
         </div>
       </div>

@@ -19,6 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../utils/cn';
+import { AutoLogoutWarning } from '../AutoLogoutWarning';
 
 // 導航項目介面
 interface NavItem {
@@ -60,7 +61,7 @@ export function Layout({ children }: LayoutProps): JSX.Element {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const location = useLocation();
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, autoLogoutWarning, timeUntilLogout, dismissAutoLogoutWarning } = useAuth();
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // 點擊外部關閉用戶選單
@@ -288,8 +289,14 @@ export function Layout({ children }: LayoutProps): JSX.Element {
                         console.log('登出成功完成');
                       } catch (error) {
                         console.error('登出失敗:', error);
-                        // 可以在這裡添加用戶友好的錯誤提示
-                        alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+                        const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+                        // 檢查是否為會話丟失錯誤，如果是則不顯示alert
+                        if (errorMessage.includes('Auth session missing') || errorMessage.includes('認證會話丟失')) {
+                          console.log('會話已丟失，登出操作已完成');
+                        } else {
+                          // 對於其他類型的錯誤，顯示alert
+                          alert(`登出失敗: ${errorMessage}`);
+                        }
                       }
                     }}
                     disabled={loading}
@@ -339,8 +346,14 @@ export function Layout({ children }: LayoutProps): JSX.Element {
                       console.log('登出成功完成');
                     } catch (error) {
                       console.error('登出失敗:', error);
-                      // 可以在這裡添加用戶友好的錯誤提示
-                      alert(`登出失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+                      const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+                      // 檢查是否為會話丟失錯誤，如果是則不顯示alert
+                      if (errorMessage.includes('Auth session missing') || errorMessage.includes('認證會話丟失')) {
+                        console.log('會話已丟失，登出操作已完成');
+                      } else {
+                        // 對於其他類型的錯誤，顯示alert
+                        alert(`登出失敗: ${errorMessage}`);
+                      }
                     }
                   }}
                   disabled={loading}
@@ -361,6 +374,20 @@ export function Layout({ children }: LayoutProps): JSX.Element {
           </div>
         </main>
       </div>
+
+      {/* 自動登出警告 */}
+      <AutoLogoutWarning
+        isVisible={autoLogoutWarning}
+        timeUntilLogout={timeUntilLogout}
+        onContinue={dismissAutoLogoutWarning}
+        onLogout={async () => {
+          try {
+            await signOut();
+          } catch (error) {
+            console.error('手動登出失敗:', error);
+          }
+        }}
+      />
     </div>
   );
 }

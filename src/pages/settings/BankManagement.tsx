@@ -472,13 +472,67 @@ export function BankManagement(): JSX.Element {
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
                                   if (file) {
+                                    // 檢查文件類型
+                                    if (!file.type.startsWith('image/')) {
+                                      alert('請選擇圖片文件（PNG、JPG、GIF等）');
+                                      e.target.value = '';
+                                      return;
+                                    }
+                                    
+                                    // 檢查文件大小（10MB限制）
+                                    if (file.size > 10 * 1024 * 1024) {
+                                      alert('文件大小不能超過10MB');
+                                      e.target.value = '';
+                                      return;
+                                    }
+                                    
+                                    // 檢查FileReader支援
+                                    if (!window.FileReader) {
+                                      alert('您的瀏覽器不支援文件上傳功能');
+                                      e.target.value = '';
+                                      return;
+                                    }
+                                    
                                     const reader = new FileReader();
+                                    
                                     reader.onload = (event) => {
-                                      // 這裡可以處理圖片上傳邏輯
-                                      console.log('存摺圖檔上傳:', event.target?.result);
+                                      try {
+                                        const result = event.target?.result;
+                                        if (result) {
+                                          // 存摺圖檔上傳成功，可以在這裡處理圖片數據
+                                          console.log('存摺圖檔上傳成功:', file.name);
+                                          alert('存摺圖檔上傳成功！');
+                                          // 這裡可以將圖片數據保存到狀態或發送到服務器
+                                          // setBankbookImage(result as string);
+                                        }
+                                      } catch (error) {
+                                        console.error('處理圖片時發生錯誤:', error);
+                                        alert('處理圖片時發生錯誤，請重試');
+                                      }
                                     };
-                                    reader.readAsDataURL(file);
+                                    
+                                    reader.onerror = () => {
+                                      console.error('讀取文件時發生錯誤');
+                                      alert('讀取文件時發生錯誤，請重試');
+                                    };
+                                    
+                                    reader.onabort = () => {
+                                      console.log('文件讀取被中斷');
+                                      alert('文件讀取被中斷');
+                                    };
+                                    
+                                    try {
+                                      reader.readAsDataURL(file);
+                                    } catch (error) {
+                                      console.error('啟動文件讀取時發生錯誤:', error);
+                                      alert('啟動文件讀取時發生錯誤，請重試');
+                                    }
                                   }
+                                  
+                                  // 清除input值，允許重新選擇相同文件
+                                   setTimeout(() => {
+                                     (e.target as HTMLInputElement).value = '';
+                                   }, 100);
                                 }}
                               />
                             </label>

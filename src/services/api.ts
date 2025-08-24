@@ -521,3 +521,101 @@ export const authApi = {
     return supabase.auth.onAuthStateChange(callback);
   }
 };
+
+/**
+ * 報價單分享 API 服務
+ */
+export const quoteShareApi = {
+  /**
+   * 創建報價單分享連結
+   */
+  async createShare(quoteId: string, expiresAt?: string): Promise<{ shareId: string; shareUrl: string }> {
+    // 生成唯一的分享ID
+    const shareId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const shareData = {
+      share_id: shareId,
+      quote_id: quoteId,
+      created_by: (await supabase.auth.getUser()).data.user?.id,
+      is_active: true,
+      expires_at: expiresAt || null
+    };
+    
+    const response = await supabase
+      .from('quote_shares')
+      .insert(shareData)
+      .select()
+      .single();
+    
+    const result = handleSupabaseResponse(response);
+    if (!result) {
+      throw new ApiError('創建分享連結失敗');
+    }
+    
+    const shareUrl = `${window.location.origin}/share/${shareId}`;
+    return { shareId, shareUrl };
+  },
+  
+  /**
+   * 獲取報價單的分享連結
+   */
+  async getSharesByQuoteId(quoteId: string): Promise<any[]> {
+    const response = await supabase
+      .from('quote_shares')
+      .select('*')
+      .eq('quote_id', quoteId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    
+    return handleSupabaseResponse(response) || [];
+  },
+  
+  /**
+   * 停用分享連結
+   */
+  async deactivateShare(shareId: string): Promise<void> {
+    const response = await supabase
+      .from('quote_shares')
+      .update({ is_active: false })
+      .eq('share_id', shareId);
+    
+    handleSupabaseResponse(response);
+  },
+  
+  /**
+   * 根據分享ID獲取公開報價單資料
+   */
+  async getPublicQuote(shareId: string): Promise<any> {
+    const response = await supabase
+      .from('quote_shares')
+      .select(`
+        id,
+        quote_id,
+        is_active,
+        expires_at,
+        quotes (
+          id,
+          quote_number,
+          quote_date,
+          valid_until,
+          contact_person,
+          status,
+          notes,
+          customer_id,
+          customers (
+            id,
+            company_name,
+            contact_person,
+            phone,
+            email,
+            address
+          )
+        )
+      `)
+      .eq('share_id', shareId)
+      .eq('is_active', true)
+      .single();
+    
+    return handleSupabaseResponse(response);
+  }
+};

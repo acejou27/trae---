@@ -79,31 +79,63 @@ export function CompanySettings(): JSX.Element {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // 檢查檔案類型
-    if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: '請選擇圖片檔案' });
-      return;
-    }
+    try {
+      // 檢查檔案類型
+      if (!file.type.startsWith('image/')) {
+        setMessage({ type: 'error', text: '請選擇圖片檔案' });
+        return;
+      }
 
-    // 檢查檔案大小 (限制為 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: '圖片檔案大小不能超過 2MB' });
-      return;
-    }
+      // 檢查檔案大小 (限制為 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage({ type: 'error', text: '圖片檔案大小不能超過 2MB' });
+        return;
+      }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      setSettings(prev => ({
-        ...prev,
-        logo: result
-      }));
-      setMessage({ type: 'success', text: 'Logo上傳成功' });
-    };
-    reader.onerror = () => {
-      setMessage({ type: 'error', text: 'Logo上傳失敗' });
-    };
-    reader.readAsDataURL(file);
+      // 檢查FileReader支援
+      if (!window.FileReader) {
+        setMessage({ type: 'error', text: '您的瀏覽器不支援檔案上傳功能' });
+        return;
+      }
+
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          const result = e.target?.result as string;
+          if (result) {
+            setSettings(prev => ({
+              ...prev,
+              logo: result
+            }));
+            setMessage({ type: 'success', text: 'Logo上傳成功' });
+          } else {
+            setMessage({ type: 'error', text: 'Logo上傳失敗：無法讀取檔案' });
+          }
+        } catch (error) {
+          console.error('Logo處理失敗:', error);
+          setMessage({ type: 'error', text: 'Logo處理失敗，請重試' });
+        }
+      };
+      
+      reader.onerror = (error) => {
+        console.error('FileReader錯誤:', error);
+        setMessage({ type: 'error', text: 'Logo上傳失敗，請檢查檔案格式' });
+      };
+      
+      reader.onabort = () => {
+        setMessage({ type: 'error', text: 'Logo上傳被中斷' });
+      };
+      
+      // 開始讀取檔案
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Logo上傳錯誤:', error);
+      setMessage({ type: 'error', text: 'Logo上傳失敗，請重試' });
+    }
+    
+    // 清除input值，允許重新選擇相同檔案
+    event.target.value = '';
   };
 
   /**
@@ -396,20 +428,67 @@ export function CompanySettings(): JSX.Element {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) {
+                    if (!file) return;
+                    
+                    try {
+                      // 檢查檔案類型
+                      if (!file.type.startsWith('image/')) {
+                        setMessage({ type: 'error', text: '請選擇圖片檔案' });
+                        return;
+                      }
+                      
+                      // 檢查檔案大小
                       if (file.size > 2 * 1024 * 1024) {
                         setMessage({ type: 'error', text: '檔案大小不能超過 2MB' });
                         return;
                       }
+                      
+                      // 檢查FileReader支援
+                      if (!window.FileReader) {
+                        setMessage({ type: 'error', text: '您的瀏覽器不支援檔案上傳功能' });
+                        return;
+                      }
+                      
                       const reader = new FileReader();
+                      
                       reader.onload = (event) => {
-                        setSettings(prev => ({
-                          ...prev,
-                          stamp: event.target?.result as string
-                        }));
+                        try {
+                          const result = event.target?.result as string;
+                          if (result) {
+                            setSettings(prev => ({
+                              ...prev,
+                              stamp: result
+                            }));
+                            setMessage({ type: 'success', text: '報價章上傳成功' });
+                          } else {
+                            setMessage({ type: 'error', text: '報價章上傳失敗：無法讀取檔案' });
+                          }
+                        } catch (error) {
+                          console.error('報價章處理失敗:', error);
+                          setMessage({ type: 'error', text: '報價章處理失敗，請重試' });
+                        }
                       };
+                      
+                      reader.onerror = (error) => {
+                        console.error('FileReader錯誤:', error);
+                        setMessage({ type: 'error', text: '報價章上傳失敗，請檢查檔案格式' });
+                      };
+                      
+                      reader.onabort = () => {
+                        setMessage({ type: 'error', text: '報價章上傳被中斷' });
+                      };
+                      
+                      // 開始讀取檔案
                       reader.readAsDataURL(file);
+                    } catch (error) {
+                      console.error('報價章上傳錯誤:', error);
+                      setMessage({ type: 'error', text: '報價章上傳失敗，請重試' });
                     }
+                    
+                    // 清除input值，允許重新選擇相同檔案
+                    setTimeout(() => {
+                      (e.target as HTMLInputElement).value = '';
+                    }, 100);
                   }}
                   className="hidden"
                   id="stamp-upload"

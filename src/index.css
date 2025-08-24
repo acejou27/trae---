@@ -28,3 +28,135 @@ input:focus, textarea:focus {
   -ms-user-select: text;
   user-select: text;
 }
+
+/* 打印樣式 */
+@media print {
+  /* 隱藏不需要打印的元素 */
+  .no-print,
+  .print\:hidden,
+  header,
+  nav,
+  .sidebar,
+  button:not(.print-visible),
+  .flex.items-center.justify-between:first-child {
+    display: none !important;
+  }
+  
+  /* 確保打印內容佔滿頁面 */
+  body {
+    margin: 0;
+    padding: 0;
+    background: white;
+    color: black;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+  
+  /* 報價單容器樣式 */
+  #quote-preview {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  
+  /* 確保內容從頁面頂部開始 */
+  .space-y-6 {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  /* 公司標題區域 */
+  .text-center.mb-8 {
+    margin-bottom: 20pt !important;
+    page-break-inside: avoid;
+  }
+  
+  /* 表格樣式 */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    margin: 10pt 0 !important;
+    page-break-inside: auto;
+  }
+  
+  table th,
+  table td {
+    border: 1pt solid #000 !important;
+    padding: 6pt !important;
+    font-size: 10pt !important;
+    line-height: 1.2 !important;
+  }
+  
+  table th {
+    background-color: #f5f5f5 !important;
+    font-weight: bold !important;
+  }
+  
+  /* 避免表格行在頁面間斷開 */
+  table tr {
+    page-break-inside: avoid;
+  }
+  
+  /* 標題樣式 */
+  h1, h2, h3 {
+    page-break-after: avoid;
+    margin-top: 0 !important;
+  }
+  
+  h2 {
+    font-size: 18pt !important;
+    margin-bottom: 10pt !important;
+  }
+  
+  h3 {
+    font-size: 14pt !important;
+    margin-bottom: 8pt !important;
+  }
+  
+  /* 網格布局在打印時改為單列 */
+  .grid {
+    display: block !important;
+  }
+  
+  .grid > div {
+    margin-bottom: 15pt !important;
+    page-break-inside: avoid;
+  }
+  
+  /* 確保重要內容不會被分頁 */
+  .mb-8,
+  .space-y-4 > div,
+  .space-y-2 > div {
+    page-break-inside: avoid;
+  }
+  
+  /* 圖片樣式 */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+  
+  /* 金額計算區域 */
+  .w-64 {
+    width: auto !important;
+    float: right;
+    margin-top: 10pt;
+  }
+  
+  /* 分頁控制 */
+  .page-break-before {
+    page-break-before: always;
+  }
+  
+  .page-break-after {
+    page-break-after: always;
+  }
+  
+  .page-break-inside-avoid {
+    page-break-inside: avoid;
+  }
+}

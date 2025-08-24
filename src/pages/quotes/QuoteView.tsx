@@ -183,17 +183,32 @@ export function QuoteView(): JSX.Element {
   };
 
   /**
-   * 處理分享/預覽
+   * 處理分享
    */
   const handleShare = async (): Promise<void> => {
     if (!quote) return;
     
     try {
-      const { previewQuoteHTML } = await import('../../utils/htmlExport');
-      previewQuoteHTML(quote);
+      const { quoteShareApi } = await import('../../services/api');
+      const { shareUrl } = await quoteShareApi.createShare(quote.id);
+      
+      // 複製分享連結到剪貼簿
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        alert(`分享連結已複製到剪貼簿！\n\n任何人都可以通過此連結查看報價單：\n${shareUrl}`);
+      } else {
+        // 降級處理：顯示連結讓用戶手動複製
+        const textArea = document.createElement('textarea');
+        textArea.value = shareUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert(`分享連結已複製到剪貼簿！\n\n任何人都可以通過此連結查看報價單：\n${shareUrl}`);
+      }
     } catch (error) {
-      console.error('HTML預覽失敗:', error);
-      alert('HTML預覽失敗，請稍後再試');
+      console.error('創建分享連結失敗:', error);
+      alert('創建分享連結失敗，請稍後再試');
     }
   };
 
@@ -501,17 +516,69 @@ export function QuoteView(): JSX.Element {
                         input.onchange = (e) => {
                           const file = (e.target as HTMLInputElement).files?.[0];
                           if (file) {
+                            // 檢查文件類型
+                           if (!file.type.startsWith('image/')) {
+                             alert('請選擇圖片文件（PNG、JPG、GIF等）');
+                             (e.target as HTMLInputElement).value = '';
+                             return;
+                           }
+                           
+                           // 檢查文件大小（10MB限制）
+                           if (file.size > 10 * 1024 * 1024) {
+                             alert('文件大小不能超過10MB');
+                             (e.target as HTMLInputElement).value = '';
+                             return;
+                           }
+                           
+                           // 檢查FileReader支援
+                           if (!window.FileReader) {
+                             alert('您的瀏覽器不支援文件上傳功能');
+                             (e.target as HTMLInputElement).value = '';
+                             return;
+                           }
+                            
                             const reader = new FileReader();
+                            
                             reader.onload = (event) => {
-                              const newSettings = {
-                                ...companySettings,
-                                stamp: event.target?.result as string
-                              };
-                              localStorage.setItem('companySettings', JSON.stringify(newSettings));
-                              window.location.reload();
+                              try {
+                                const result = event.target?.result;
+                                if (result) {
+                                  const newSettings = {
+                                    ...companySettings,
+                                    stamp: result as string
+                                  };
+                                  localStorage.setItem('companySettings', JSON.stringify(newSettings));
+                                  alert('報價章上傳成功！');
+                                  window.location.reload();
+                                }
+                              } catch (error) {
+                                console.error('處理報價章時發生錯誤:', error);
+                                alert('處理報價章時發生錯誤，請重試');
+                              }
                             };
-                            reader.readAsDataURL(file);
+                            
+                            reader.onerror = () => {
+                              console.error('讀取報價章文件時發生錯誤');
+                              alert('讀取報價章文件時發生錯誤，請重試');
+                            };
+                            
+                            reader.onabort = () => {
+                              console.log('報價章文件讀取被中斷');
+                              alert('報價章文件讀取被中斷');
+                            };
+                            
+                            try {
+                              reader.readAsDataURL(file);
+                            } catch (error) {
+                              console.error('啟動報價章文件讀取時發生錯誤:', error);
+                              alert('啟動報價章文件讀取時發生錯誤，請重試');
+                            }
                           }
+                          
+                          // 清除input值，允許重新選擇相同文件
+                          setTimeout(() => {
+                            (e.target as HTMLInputElement).value = '';
+                          }, 100);
                         };
                         input.click();
                       }}
@@ -534,17 +601,69 @@ export function QuoteView(): JSX.Element {
                       input.onchange = (e) => {
                         const file = (e.target as HTMLInputElement).files?.[0];
                         if (file) {
+                          // 檢查文件類型
+                                 if (!file.type.startsWith('image/')) {
+                                   alert('請選擇圖片文件（PNG、JPG、GIF等）');
+                                   (e.target as HTMLInputElement).value = '';
+                                   return;
+                                 }
+                                 
+                                 // 檢查文件大小（10MB限制）
+                                 if (file.size > 10 * 1024 * 1024) {
+                                   alert('文件大小不能超過10MB');
+                                   (e.target as HTMLInputElement).value = '';
+                                   return;
+                                 }
+                                 
+                                 // 檢查FileReader支援
+                                 if (!window.FileReader) {
+                                   alert('您的瀏覽器不支援文件上傳功能');
+                                   (e.target as HTMLInputElement).value = '';
+                                   return;
+                                 }
+                          
                           const reader = new FileReader();
+                          
                           reader.onload = (event) => {
-                            const newSettings = {
-                              ...companySettings,
-                              stamp: event.target?.result as string
-                            };
-                            localStorage.setItem('companySettings', JSON.stringify(newSettings));
-                            window.location.reload();
+                            try {
+                              const result = event.target?.result;
+                              if (result) {
+                                const newSettings = {
+                                  ...companySettings,
+                                  stamp: result as string
+                                };
+                                localStorage.setItem('companySettings', JSON.stringify(newSettings));
+                                alert('報價章上傳成功！');
+                                window.location.reload();
+                              }
+                            } catch (error) {
+                              console.error('處理報價章時發生錯誤:', error);
+                              alert('處理報價章時發生錯誤，請重試');
+                            }
                           };
-                          reader.readAsDataURL(file);
+                          
+                          reader.onerror = () => {
+                            console.error('讀取報價章文件時發生錯誤');
+                            alert('讀取報價章文件時發生錯誤，請重試');
+                          };
+                          
+                          reader.onabort = () => {
+                            console.log('報價章文件讀取被中斷');
+                            alert('報價章文件讀取被中斷');
+                          };
+                          
+                          try {
+                            reader.readAsDataURL(file);
+                          } catch (error) {
+                            console.error('啟動報價章文件讀取時發生錯誤:', error);
+                            alert('啟動報價章文件讀取時發生錯誤，請重試');
+                          }
                         }
+                        
+                        // 清除input值，允許重新選擇相同文件
+                         setTimeout(() => {
+                           (e.target as HTMLInputElement).value = '';
+                         }, 100);
                       };
                       input.click();
                     }}
@@ -656,17 +775,69 @@ export function QuoteView(): JSX.Element {
                             input.onchange = (e) => {
                               const file = (e.target as HTMLInputElement).files?.[0];
                               if (file) {
+                                // 檢查文件類型
+                               if (!file.type.startsWith('image/')) {
+                                 alert('請選擇圖片文件（PNG、JPG、GIF等）');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                               
+                               // 檢查文件大小（10MB限制）
+                               if (file.size > 10 * 1024 * 1024) {
+                                 alert('文件大小不能超過10MB');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                               
+                               // 檢查FileReader支援
+                               if (!window.FileReader) {
+                                 alert('您的瀏覽器不支援文件上傳功能');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                                
                                 const reader = new FileReader();
+                                
                                 reader.onload = (event) => {
-                                  const newBankSettings = {
-                                    ...bankSettings,
-                                    bankbookImage: event.target?.result as string
-                                  };
-                                  localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
-                                  window.location.reload();
+                                  try {
+                                    const result = event.target?.result;
+                                    if (result) {
+                                      const newBankSettings = {
+                                        ...bankSettings,
+                                        bankbookImage: result as string
+                                      };
+                                      localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
+                                      alert('存摺圖檔上傳成功！');
+                                      window.location.reload();
+                                    }
+                                  } catch (error) {
+                                    console.error('處理存摺圖檔時發生錯誤:', error);
+                                    alert('處理存摺圖檔時發生錯誤，請重試');
+                                  }
                                 };
-                                reader.readAsDataURL(file);
+                                
+                                reader.onerror = () => {
+                                  console.error('讀取存摺圖檔時發生錯誤');
+                                  alert('讀取存摺圖檔時發生錯誤，請重試');
+                                };
+                                
+                                reader.onabort = () => {
+                                  console.log('存摺圖檔讀取被中斷');
+                                  alert('存摺圖檔讀取被中斷');
+                                };
+                                
+                                try {
+                                  reader.readAsDataURL(file);
+                                } catch (error) {
+                                  console.error('啟動存摺圖檔讀取時發生錯誤:', error);
+                                  alert('啟動存摺圖檔讀取時發生錯誤，請重試');
+                                }
                               }
+                              
+                              // 清除input值，允許重新選擇相同文件
+                               setTimeout(() => {
+                                 (e.target as HTMLInputElement).value = '';
+                               }, 100);
                             };
                             input.click();
                           }}
@@ -689,17 +860,69 @@ export function QuoteView(): JSX.Element {
                           input.onchange = (e) => {
                             const file = (e.target as HTMLInputElement).files?.[0];
                             if (file) {
+                              // 檢查文件類型
+                               if (!file.type.startsWith('image/')) {
+                                 alert('請選擇圖片文件（PNG、JPG、GIF等）');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                               
+                               // 檢查文件大小（10MB限制）
+                               if (file.size > 10 * 1024 * 1024) {
+                                 alert('文件大小不能超過10MB');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                               
+                               // 檢查FileReader支援
+                               if (!window.FileReader) {
+                                 alert('您的瀏覽器不支援文件上傳功能');
+                                 (e.target as HTMLInputElement).value = '';
+                                 return;
+                               }
+                              
                               const reader = new FileReader();
+                              
                               reader.onload = (event) => {
-                                const newBankSettings = {
-                                  ...bankSettings,
-                                  bankbookImage: event.target?.result as string
-                                };
-                                localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
-                                window.location.reload();
+                                try {
+                                  const result = event.target?.result;
+                                  if (result) {
+                                    const newBankSettings = {
+                                      ...bankSettings,
+                                      bankbookImage: result as string
+                                    };
+                                    localStorage.setItem('bankSettings', JSON.stringify(newBankSettings));
+                                    alert('存摺圖檔上傳成功！');
+                                    window.location.reload();
+                                  }
+                                } catch (error) {
+                                  console.error('處理存摺圖檔時發生錯誤:', error);
+                                  alert('處理存摺圖檔時發生錯誤，請重試');
+                                }
                               };
-                              reader.readAsDataURL(file);
+                              
+                              reader.onerror = () => {
+                                console.error('讀取存摺圖檔時發生錯誤');
+                                alert('讀取存摺圖檔時發生錯誤，請重試');
+                              };
+                              
+                              reader.onabort = () => {
+                                console.log('存摺圖檔讀取被中斷');
+                                alert('存摺圖檔讀取被中斷');
+                              };
+                              
+                              try {
+                                reader.readAsDataURL(file);
+                              } catch (error) {
+                                console.error('啟動存摺圖檔讀取時發生錯誤:', error);
+                                alert('啟動存摺圖檔讀取時發生錯誤，請重試');
+                              }
                             }
+                            
+                            // 清除input值，允許重新選擇相同文件
+                             setTimeout(() => {
+                               (e.target as HTMLInputElement).value = '';
+                             }, 100);
                           };
                           input.click();
                         }}
